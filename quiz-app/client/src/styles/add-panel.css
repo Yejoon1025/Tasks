@@ -1,0 +1,158 @@
+/* ── Scrim ─────────────────────────────────────────────────────────────── */
+.add-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 200;
+  animation: scrim-in 0.2s ease forwards;
+}
+@keyframes scrim-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Panel ─────────────────────────────────────────────────────────────── */
+.add-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  padding: 0 20px 40px;
+  z-index: 201;
+  animation: panel-up 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+@keyframes panel-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+/* ── Drag handle ───────────────────────────────────────────────────────── */
+.add-panel-handle {
+  width: 36px;
+  height: 4px;
+  background: #d1d5db;
+  border-radius: 2px;
+  margin: 14px auto 20px;
+}
+
+/* ── Tab bar ───────────────────────────────────────────────────────────── */
+.add-panel-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.add-panel-tab {
+  flex: 1;
+  padding: 8px 0;
+  border: none;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.add-panel-tab--active {
+  background: #4f46e5;
+  color: #fff;
+}
+
+/* ── Type selector (Flashcard / Open-Ended) ────────────────────────────── */
+.add-type-row {
+  display: flex;
+  gap: 8px;
+}
+.add-type-btn {
+  flex: 1;
+  padding: 9px 0;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.add-type-btn--active {
+  border-color: #4f46e5;
+  color: #4f46e5;
+  background: #eef2ff;
+}
+
+/* ── Form ──────────────────────────────────────────────────────────────── */
+.add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.add-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.add-field label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.add-field input,
+.add-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: inherit;
+  color: #111827;
+  background: #f9fafb;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.add-field input:focus,
+.add-field textarea:focus {
+  border-color: #4f46e5;
+  background: #fff;
+}
+.add-field textarea {
+  resize: vertical;
+  min-height: 76px;
+}
+
+/* ── Submit ────────────────────────────────────────────────────────────── */
+.add-submit-btn {
+  margin-top: 4px;
+  width: 100%;
+  padding: 13px;
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.add-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.add-submit-btn:not(:disabled):active {
+  opacity: 0.82;
+}
+
+/* ── Error message ─────────────────────────────────────────────────────── */
+.add-error {
+  font-size: 13px;
+  color: #ef4444;
+  text-align: center;
+  margin: 0;
+}

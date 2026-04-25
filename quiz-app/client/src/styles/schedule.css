@@ -1,0 +1,253 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Schedule — ScheduleWidget (compact bar) + SchedulePanel (full-day list).
+   Width mirrors --card-w so widget and cards share the same column.
+   Imported by ScheduleWidget.jsx and SchedulePanel.jsx.
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Widget shell ────────────────────────────────────────────────────────── */
+.schedule-widget {
+  position: relative;           /* anchor for .sw-progress-track              */
+  width: var(--card-w);
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;             /* clips progress bar to border-radius         */
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.schedule-widget:hover {
+  background: var(--color-surface-2);
+  box-shadow: var(--shadow-card-hover);
+}
+.schedule-widget--expanded {
+  border-radius: var(--radius-xl) var(--radius-xl) var(--radius-md) var(--radius-md);
+}
+
+/* ── Variant accent: left-edge stripe ───────────────────────────────────── */
+.schedule-widget--now  { border-left: 2px solid var(--color-green);  }
+.schedule-widget--next { border-left: 2px solid var(--color-accent); }
+
+/* ── Status badge (NOW / NEXT) ───────────────────────────────────────────── */
+.sw-badge {
+  flex-shrink: 0;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 100px;
+  border: 1px solid transparent;
+}
+
+.sw-badge--now {
+  color: var(--color-green);
+  background: var(--color-green-dim);
+  border-color: rgba(16, 185, 129, 0.20);
+}
+
+.sw-badge--next {
+  color: var(--color-accent);
+  background: var(--color-accent-dim);
+  border-color: rgba(99, 102, 241, 0.20);
+}
+
+/* ── Center body: time + title ───────────────────────────────────────────── */
+.sw-body {
+  flex: 1;
+  min-width: 0;                 /* required: lets flex item shrink below content width */
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.sw-time {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.sw-title {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--color-text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Category pill ───────────────────────────────────────────────────────── */
+.sw-category {
+  flex-shrink: 0;
+  font-size: 0.60rem;
+  font-weight: 600;
+  color: var(--color-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 100px;
+  padding: 3px 9px;
+}
+
+/* ── Progress bar (NOW only) ─────────────────────────────────────────────── */
+.sw-progress-track {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-green-dim);
+}
+
+.sw-progress-fill {
+  height: 100%;
+  background: var(--color-green);
+  transition: width 1s linear;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.schedule-widget--empty {
+  justify-content: space-between;
+  padding-right: 12px;
+}
+
+.sw-empty-text {
+  font-size: 0.75rem;
+  color: var(--color-text-3);
+  font-style: italic;
+}
+
+/* ── Expand/collapse chevron ─────────────────────────────────────────────── */
+.sw-chevron {
+  flex-shrink: 0;
+  color: var(--color-text-3);
+  transition: transform 0.2s ease;
+}
+.sw-chevron--up {
+  transform: rotate(180deg);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SchedulePanel — full-day activity list
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── app-main modifier: left-align when panel is open ────────────────────── */
+.app-main--schedule {
+  justify-content: flex-start;
+  padding-top: 20px;
+}
+
+/* ── Panel shell ─────────────────────────────────────────────────────────── */
+.schedule-panel {
+  width: var(--card-w);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-top: none;                         /* flush join with widget above    */
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  overflow-y: auto;
+  max-height: calc(100dvh - 220px);         /* leave room for header + widget  */
+}
+
+/* ── Panel heading ───────────────────────────────────────────────────────── */
+.sp-heading {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-text-3);
+  padding: 14px 16px 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* ── Activity list ───────────────────────────────────────────────────────── */
+.sp-list {
+  list-style: none;
+}
+
+/* ── Individual activity row ─────────────────────────────────────────────── */
+.sp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  position: relative;
+  transition: background 0.1s ease;
+}
+.sp-item:last-child { border-bottom: none; }
+
+/* Current activity: green left stripe + subtle tint */
+.sp-item--current {
+  background: var(--color-green-dim);
+  border-left: 2px solid var(--color-green);
+  padding-left: 14px;             /* compensate for 2px border */
+}
+
+/* Past activities: dimmed */
+.sp-item--past {
+  opacity: 0.42;
+}
+
+/* ── Row contents ────────────────────────────────────────────────────────── */
+.sp-time {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  width: 56px;                    /* fixed width keeps all times aligned       */
+}
+
+.sp-title {
+  flex: 1;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sp-meta {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sp-duration {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--color-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-category {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: var(--color-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 100px;
+  padding: 2px 7px;
+}
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+@media (max-width: 400px) {
+  .sw-time,
+  .sw-title { font-size: 0.73rem; }
+  .sp-title  { font-size: 0.77rem; }
+  .sp-time   { font-size: 0.70rem; width: 50px; }
+}

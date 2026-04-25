@@ -1,0 +1,46 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+# Allow the workflow to push to the gh-pages branch
+permissions:
+  contents: write
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: client
+
+      - name: Build
+        run: npm run build
+        working-directory: client
+        env:
+          # Set these as GitHub repository secrets:
+          #   VITE_API_BASE  = https://<your-app>.onrender.com
+          #   VITE_BASE_PATH = /<repo-name>/  (or / for username.github.io repos)
+          VITE_API_BASE:  ${{ secrets.VITE_API_BASE }}
+          VITE_BASE_PATH: ${{ secrets.VITE_BASE_PATH }}
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir:  ./client/dist
+          # Keeps deployment history clean
+          force_orphan: true

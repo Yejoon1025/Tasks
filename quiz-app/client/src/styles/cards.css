@@ -1,0 +1,313 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Cards — styles for DeckCard (drag wrapper), FlashCard, and OpenEndedCard.
+   Imported by components/cards/*.jsx.
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Deck: stack container ───────────────────────────────────────────────── */
+.card-stack {
+  position: relative;
+  width: var(--card-w);
+  height: var(--card-h);
+}
+
+/* ── DeckCard: spring-animated outer wrapper ─────────────────────────────── */
+/* transform-style: preserve-3d is required on every ancestor of .card-flip   */
+/* so that will-change:transform doesn't composite away the 3-D context.      */
+.deck-card-outer {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+  cursor: grab;
+  user-select: none;
+}
+.deck-card-outer:active { cursor: grabbing; }
+
+/* ── DeckCard: card surface (receives background tint from spring) ────────── */
+/* overflow must NOT be set here — it forces transform-style:flat              */
+/* and kills the 3-D flip. Each .card-face clips itself via overflow:hidden.   */
+.deck-card-surface {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease;
+}
+.deck-card-outer:hover .deck-card-surface {
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* ── DeckCard: edge-stripe drag indicators ───────────────────────────────── */
+.edge-indicator {
+  position: absolute;
+  top: 10%;
+  bottom: 10%;
+  width: 3px;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 10;
+}
+.edge-indicator-right { left: 0;  background: var(--color-green); }
+.edge-indicator-left  { right: 0; background: var(--color-red);   }
+
+/* ── DeckCard: corner action label ──────────────────────────────────────── */
+.corner-label {
+  position: absolute;
+  top: 16px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+  z-index: 10;
+}
+.corner-label-right {
+  left: 16px;
+  color: var(--color-green);
+  background: var(--color-green-dim);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.corner-label-left {
+  right: 16px;
+  color: var(--color-red);
+  background: var(--color-red-dim);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+}
+
+/* ── DeckCard: swipe-up "Again" label ────────────────────────────────────── */
+.skip-label {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+  color: var(--color-accent);
+  background: var(--color-accent-dim);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+/* ── Progress bar ────────────────────────────────────────────────────────── */
+.progress-bar {
+  position: absolute;
+  bottom: -22px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-border);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: 1px;
+  transition: width 0.35s ease;
+}
+.progress-text {
+  position: absolute;
+  bottom: -40px;
+  right: 0;
+  font-size: 0.68rem;
+  color: var(--color-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Card flip ───────────────────────────────────────────────────────────── */
+.card-inner-wrapper {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.card-flip {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Card faces ──────────────────────────────────────────────────────────── */
+/*
+ * Flip is a 2-step scaleX pinch — no 3-D perspective:
+ *   → flip to back:   front collapses (0.14s ease-in), then back expands (0.14s ease-out, 0.14s delay)
+ *   → flip to front:  back collapses  (0.14s ease-in), then front expands (0.14s ease-out, 0.14s delay)
+ */
+.card-face {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-xl);
+  overflow: hidden;           /* clips flush content (e.g. textarea) to radius */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 28px 26px;
+  gap: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  /* front face: expands after back has collapsed (flip-to-front) */
+  transition: transform 0.14s ease-out 0.14s;
+}
+
+.card-front { justify-content: center; }
+
+.card-back {
+  background: var(--color-surface-2);
+  justify-content: center;
+  /* starts hidden; collapses immediately on flip-to-front */
+  transform: scaleX(0);
+  pointer-events: none;
+  transition: transform 0.14s ease-in;
+}
+
+/* ── Flipped state ───────────────────────────────────────────────────────── */
+/* front collapses immediately */
+.card-flip.is-flipped .card-front {
+  transform: scaleX(0);
+  pointer-events: none;
+  transition: transform 0.14s ease-in;
+}
+/* back expands after front has collapsed */
+.card-flip.is-flipped .card-back {
+  transform: scaleX(1);
+  pointer-events: auto;
+  transition: transform 0.14s ease-out 0.14s;
+}
+
+/* ── Card content: type badge ────────────────────────────────────────────── */
+.card-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 100px;
+  border: 1px solid transparent;
+}
+.badge-flash  {
+  color: var(--color-accent);
+  background: var(--color-accent-dim);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+.badge-open   {
+  color: var(--color-amber);
+  background: var(--color-amber-dim);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+.badge-answer {
+  color: var(--color-green);
+  background: var(--color-green-dim);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+/* ── Card content: deck tag ──────────────────────────────────────────────── */
+.card-deck-tag {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--color-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 4px;
+}
+
+/* ── Card content: body text ─────────────────────────────────────────────── */
+.card-body {
+  font-size: 1.2rem;
+  font-weight: 500;
+  line-height: 1.55;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+.card-body.is-answer {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* ── Card content: hint ──────────────────────────────────────────────────── */
+.card-hint {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  color: var(--color-text-3);
+  letter-spacing: 0.01em;
+}
+
+/* ── Open-ended: back face — full-bleed textarea ─────────────────────────── */
+.card-back.open-back {
+  padding: 0;
+  gap: 0;
+  overflow: hidden; /* clip textarea to card radius */
+}
+
+/* Floating header bar — tappable to flip back to question */
+.note-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 10px;
+  z-index: 2;
+  cursor: pointer;
+  /* subtle blur so text is readable over the textarea */
+  background: linear-gradient(
+    to bottom,
+    var(--color-surface-2) 70%,
+    transparent
+  );
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  user-select: none;
+}
+
+.note-topbar-back {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  letter-spacing: 0.01em;
+}
+.note-topbar-back:hover { opacity: 0.8; }
+
+.note-topbar-deck {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--color-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+/* Full-bleed textarea — no border, matches card-back background */
+.note-area {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--color-surface-2);
+  border: none;
+  border-radius: var(--radius-xl);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  line-height: 1.7;
+  /* top padding leaves room for the floating topbar */
+  padding: 46px 22px 22px;
+  resize: none;
+  outline: none;
+  z-index: 1;
+}
+.note-area::placeholder { color: var(--color-text-3); }

@@ -1,0 +1,188 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Global — CSS reset, base typography, and app shell layout.
+   Does NOT contain component styles. See cards.css / summary.css.
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Reset ───────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── App shell ───────────────────────────────────────────────────────────── */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0 18px;
+  border-bottom: 1px solid var(--color-border);
+  cursor: grab;
+  user-select: none;
+}
+.app-header:active { cursor: grabbing; }
+
+/* ── Deck tab switcher ───────────────────────────────────────────────────── */
+.deck-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 100px;
+  padding: 3px;
+}
+
+.deck-tab {
+  border: none;
+  background: transparent;
+  padding: 5px 16px;
+  border-radius: 100px;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-3);
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+  line-height: 1;
+}
+
+.deck-tab--active {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+/* ── Count pill (right side of header) ──────────────────────────────────── */
+.app-count {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--color-text-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 100px;
+  padding: 3px 11px;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Add button (header, right of count pill) ────────────────────────────── */
+.add-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 1px 0;   /* tiny optical nudge to centre the + */
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+.add-btn:active { opacity: 0.75; }
+
+/* ── Deck slide animations (triggered by key change + class) ─────────────── */
+@keyframes deckSlideInRight {
+  from { transform: translateX(22px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes deckSlideInLeft {
+  from { transform: translateX(-22px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+.deck-slide--from-right {
+  animation: deckSlideInRight 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.deck-slide--from-left {
+  animation: deckSlideInLeft 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Main content area ───────────────────────────────────────────────────── */
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+/* When the schedule panel is open, top-align instead of centering */
+.app-main--schedule {
+  justify-content: flex-start;
+  padding-top: 20px;
+}
+
+/* ── Loading state ───────────────────────────────────────────────────────── */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--color-text-3);
+  font-size: 0.85rem;
+}
+
+.spinner {
+  width: 26px;
+  height: 26px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Error state ─────────────────────────────────────────────────────────── */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-text-2);
+}
+
+.error-code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.75rem;
+  color: var(--color-red);
+  background: var(--color-red-dim);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.error-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-3);
+}

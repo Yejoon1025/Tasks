@@ -1,0 +1,11 @@
+id,time,title,duration_min,category,date
+1,06:30,Morning workout,45,Health,
+2,07:30,Shower & breakfast,30,Personal,
+3,08:15,Deep work block — coding,90,Work,
+4,10:00,Email & Slack triage,20,Work,
+5,10:30,Study session — flashcards,30,Learning,
+6,12:00,Lunch break,45,Personal,
+7,13:00,Team standup,15,Work,
+8,13:30,Deep work block — writing,120,Work,
+9,16:00,Evening walk,30,Health,
+10,20:00,Reading & wind-down,60,Personal,

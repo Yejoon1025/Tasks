@@ -1,0 +1,133 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Tasks — styles for TaskCard and the TaskStack done-state.
+   Imported by components/cards/TaskCard.jsx and components/TaskStack.jsx.
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── TaskCard wrapper (fills .deck-card-surface) ─────────────────────────── */
+.tc-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Override card-front centering: top-align for multi-field layout ─────── */
+.tc-front {
+  justify-content: flex-start !important;
+}
+
+/* ── Top row: badge + due date pill side by side ─────────────────────────── */
+.tc-toprow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* ── Task badge ──────────────────────────────────────────────────────────── */
+.tc-badge {
+  color: var(--color-accent);
+  background: var(--color-accent-dim);
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+/* ── Due date pill ───────────────────────────────────────────────────────── */
+.tc-due {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 100px;
+  border: 1px solid transparent;
+}
+
+.tc-due--overdue {
+  color: var(--color-red);
+  background: var(--color-red-dim);
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+.tc-due--today {
+  color: var(--color-amber);
+  background: var(--color-amber-dim);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.tc-due--tomorrow {
+  color: var(--color-text-2);
+  background: var(--color-surface-2);
+  border-color: var(--color-border);
+}
+
+.tc-due--future {
+  color: var(--color-text-3);
+  background: var(--color-surface-2);
+  border-color: var(--color-border);
+}
+
+/* ── Title ───────────────────────────────────────────────────────────────── */
+.tc-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-text);
+  letter-spacing: -0.015em;
+  margin-top: 4px;
+}
+
+/* ── Description ─────────────────────────────────────────────────────────── */
+.tc-desc {
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--color-text-2);
+}
+
+/* ── Footer: project pill + drag hint ───────────────────────────────────── */
+.tc-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+/* ── Project pill ─────────────────────────────────────────────────────────── */
+.tc-project {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--color-text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 100px;
+  padding: 3px 10px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TaskStack done state
+═══════════════════════════════════════════════════════════════════════════ */
+
+.task-done {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+  padding: 4px 0;
+}
+
+.task-done-heading {
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+.task-done-sub {
+  font-size: 0.8rem;
+  color: var(--color-text-3);
+  margin-top: -12px;
+}
