@@ -46,7 +46,8 @@ export default function CardStack({ questions, onSwipe, sessionStats, onReset })
   }
 
   // ── Swipe up: re-queue at the back ─────────────────────────────────────────
-  function handleSkip() {
+  // elapsedMinutes is passed from DeckCard so time is accumulated even on skip
+  function handleSkip(id, elapsedMinutes) {
     setDeck(prev => {
       const card = prev[currentIndex];
       if (!card) return prev;
@@ -56,6 +57,15 @@ export default function CardStack({ questions, onSwipe, sessionStats, onReset })
       return [{ ...card, _version: card._version + 1 }, ...rest];
     });
     // currentIndex stays the same — now points to the next card in the deck
+
+    // Accumulate time spent before the skip
+    if (elapsedMinutes > 0) {
+      fetch(`${API_BASE}/api/questions/${id}/time`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ minutes: elapsedMinutes }),
+      }).catch(err => console.warn('Time sync failed:', err.message));
+    }
   }
 
   // ── Deck exhausted ─────────────────────────────────────────────────────────

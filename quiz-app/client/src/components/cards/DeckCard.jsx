@@ -36,10 +36,11 @@ import {
 import '../../styles/cards.css';
 
 // ─── Label copy per card type ──────────────────────────────────────────────
+// Questions from the API have no explicit type tag, so DEFAULT_LABELS applies.
+const DEFAULT_LABELS = { right: 'Correct', left: 'Incorrect', up: 'Again' };
 const LABELS = {
-  [CARD_TYPE.FLASHCARD]: { right: 'Correct',  left: 'Incorrect', up: 'Again'  },
-  [CARD_TYPE.TASK]:      { right: 'Complete', left: 'Defer',     up: 'Skip'   },
-  [CARD_TYPE.WARMUP]:    { right: 'Done',     left: 'Skip',      up: 'Skip'   },
+  [CARD_TYPE.TASK]:   { right: 'Complete', left: 'Defer', up: 'Skip' },
+  [CARD_TYPE.WARMUP]: { right: 'Done',     left: 'Skip',  up: 'Skip' },
 };
 
 // ─── Timer helpers ─────────────────────────────────────────────────────────
@@ -66,7 +67,7 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
   const [gone, setGone] = useState(false);
 
   const { right: rightLabel, left: leftLabel, up: upLabel } =
-    LABELS[question.type] ?? LABELS[CARD_TYPE.FLASHCARD];
+    LABELS[question.type] ?? DEFAULT_LABELS;
 
   // ── Spring ──────────────────────────────────────────────────────────────
   const [{ x, y, rotate }, api] = useSpring(() => ({ x: 0, y: 0, rotate: 0 }));
@@ -135,7 +136,9 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
             config: { tension: 300, friction: 22 },
             onRest: () => {
               clearInterval(intervalRef.current);
-              onSkip(question.id);
+              // Pass elapsed minutes so callers can add this session's time
+              // before re-queuing the card
+              onSkip(question.id, computeMinutes(startTimeRef.current));
             },
           });
         } else if (isHorizontal) {
@@ -183,11 +186,11 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
 
       {/* Card surface — onClick starts the timer on first tap */}
       <animated.div className="deck-card-surface" style={{ background: surfaceBg }} onClick={startTimer}>
-        {question.type === CARD_TYPE.FLASHCARD
-          ? <FlashCard  question={question} />
-          : question.type === CARD_TYPE.TASK
-            ? <TaskCard   question={question} />
-            : <WarmupCard question={question} />
+        {question.type === CARD_TYPE.TASK
+          ? <TaskCard   question={question} />
+          : question.type === CARD_TYPE.WARMUP
+            ? <WarmupCard question={question} />
+            : <FlashCard  question={question} />
         }
       </animated.div>
     </animated.div>

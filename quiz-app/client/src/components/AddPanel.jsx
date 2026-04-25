@@ -58,7 +58,7 @@ export default function AddPanel({ defaultTab = 'question', onClose, onAdded }) 
 
       if (tab === 'question') {
         url  = `${API_BASE}/api/questions`;
-        body = { type: 'flashcard', front: qFront.trim(), back: qBack.trim(), deck: qDeck.trim() };
+        body = { front: qFront.trim(), back: qBack.trim(), deck: qDeck.trim() };
       } else if (tab === 'task') {
         url  = `${API_BASE}/api/tasks`;
         body = { title: tTitle.trim(), description: tDesc.trim(), project: tProj.trim(), due_date: tDue };
@@ -83,7 +83,7 @@ export default function AddPanel({ defaultTab = 'question', onClose, onAdded }) 
       // Build a local object for immediate in-app update
       let newItem = null;
       if (tab === 'question') {
-        newItem = { id: String(id), type: 'flashcard', front: qFront.trim(), back: qBack.trim(), deck: qDeck.trim(), time_spent_min: 0 };
+        newItem = { id: String(id), front: qFront.trim(), back: qBack.trim(), deck: qDeck.trim(), time_spent_min: 0 };
       } else if (tab === 'task') {
         newItem = { id: String(id), title: tTitle.trim(), description: tDesc.trim(), project: tProj.trim(), due_date: tDue, status: '' };
       }

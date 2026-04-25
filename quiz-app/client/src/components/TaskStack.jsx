@@ -45,7 +45,7 @@ export default function TaskStack({ tasks, onReset }) {
   }
 
   // ── Swipe up: re-queue at the back ─────────────────────────────────────────
-  function handleSkip() {
+  function handleSkip(id, elapsedMinutes) {
     setDeck(prev => {
       const card = prev[currentIndex];
       if (!card) return prev;
@@ -53,6 +53,15 @@ export default function TaskStack({ tasks, onReset }) {
       return [{ ...card, _version: card._version + 1 }, ...rest];
     });
     // currentIndex stays the same — now points to the next card
+
+    // Accumulate time without changing status (task is re-queued, not completed)
+    if (elapsedMinutes > 0) {
+      fetch(`${API_BASE}/api/tasks/${id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ time_spent_min: elapsedMinutes }),
+      }).catch(err => console.warn('Task time sync failed:', err.message));
+    }
   }
 
   // ── Deck exhausted ─────────────────────────────────────────────────────────

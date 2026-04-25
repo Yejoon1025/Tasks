@@ -21,10 +21,12 @@ export const STACK_SCALE_STEP    = 0.035; // scale reduction per depth level
 export const STACK_OFFSET_PX     = 8;     // px translateY per depth level
 
 // ─── Card types ───────────────────────────────────────────────────────────────
+// Only TASK and WARMUP need explicit type tags — questions from the API are
+// always flashcards and DeckCard defaults to flashcard labels/face when type
+// is absent or unrecognised.
 export const CARD_TYPE = {
-  FLASHCARD: 'flashcard',
-  TASK:      'task',
-  WARMUP:    'warmup',
+  TASK:   'task',
+  WARMUP: 'warmup',
 };
 
 // ─── Session storage ──────────────────────────────────────────────────────────
