@@ -19,6 +19,13 @@ import { API_BASE } from '../api.js';
 import '../styles/cards.css';
 import '../styles/warmup.css';
 
+/** YYYY-MM-DD in the user's local timezone — sent to the server so the stored
+ *  date matches what the client compares against in the warmup gate check. */
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export default function WarmupGate({ tasks, onComplete }) {
   const [deck, setDeck] = useState(() =>
     tasks.map(t => ({ ...t, type: CARD_TYPE.WARMUP, _version: 0 }))
@@ -26,12 +33,13 @@ export default function WarmupGate({ tasks, onComplete }) {
   const [currentIndex, setCurrentIndex] = useState(tasks.length - 1);
   const [done, setDone] = useState(false);
 
-  /** Mark a task as done on the server (fire-and-forget). */
+  /** Mark a task as done on the server (fire-and-forget).
+   *  Sends the client's local date so the server stores the correct value. */
   function markDone(id) {
     fetch(`${API_BASE}/api/warmup/${id}`, {
       method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({}),
+      body:    JSON.stringify({ date: todayStr() }),
     }).catch(err => console.warn('Warmup sync failed:', err.message));
   }
 

@@ -275,7 +275,9 @@ app.get('/api/warmup', async (req, res) => {
 // Warmup sheet columns: A=id  B=title  C=description  D=last_completed
 app.patch('/api/warmup/:id', async (req, res) => {
   const { id } = req.params;
-  const today  = new Date().toISOString().slice(0, 10); // YYYY-MM-DD local-ish
+  // Prefer the client-sent local date so the stored value matches what the
+  // client compares against (local YYYY-MM-DD, not server UTC).
+  const today  = req.body.date || new Date().toISOString().slice(0, 10);
 
   if (!isSheetsConfigured()) {
     return res.json({ id, last_completed: today, persisted: false });

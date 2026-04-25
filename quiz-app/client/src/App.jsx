@@ -2,9 +2,11 @@
  * App — root component.
  *
  * On first visit each day, the user must swipe through all pending daily
- * warm-up tasks (WarmupGate) before seeing the main app. Completion is
- * stored in localStorage keyed by date, so the gate is skipped on reload
- * if already cleared today.
+ * warm-up tasks (WarmupGate) before seeing the main app.
+ * On every page load the app always fetches the warmup state from the server
+ * so that completions on one device are immediately visible on any other
+ * device. localStorage is only written after the gate clears — it is never
+ * used to skip the server check.
  *
  * Two decks — Study (flashcards + open-ended questions) and Tasks (to-do items).
  * Switch between them by swiping the header left/right or tapping the deck tabs.
@@ -44,12 +46,13 @@ function todayStr() {
 export default function App() {
   // ── Warmup gate ────────────────────────────────────────────────────────────
   const todayKey = WARMUP_CLEARED_PREFIX + todayStr();
-  const [gateCleared,   setGateCleared]   = useState(() => localStorage.getItem(todayKey) === '1');
+  // Always start uncleared — we check the server on every mount so that
+  // completions on another device are reflected immediately on reload.
+  const [gateCleared,   setGateCleared]   = useState(false);
   const [pendingWarmup, setPendingWarmup] = useState([]);
-  const [warmupChecked, setWarmupChecked] = useState(gateCleared);
+  const [warmupChecked, setWarmupChecked] = useState(false);
 
   useEffect(() => {
-    if (gateCleared) return;
     fetch(`${API_BASE}/api/warmup`)
       .then(r => r.json())
       .then(data => {
@@ -64,6 +67,9 @@ export default function App() {
         setWarmupChecked(true);
       })
       .catch(() => {
+        // On network failure, let the user through rather than blocking
+        // indefinitely. LocalStorage is not trusted for gate state anymore —
+        // we always verify with the server when reachable.
         setGateCleared(true);
         setWarmupChecked(true);
       });
