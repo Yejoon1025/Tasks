@@ -1,3 +1,34 @@
+/**
+ * server/index.js — Express API server.
+ *
+ * All data is backed by Google Sheets via sheets.js.  When the three required
+ * Google env vars are absent the server falls back to plain CSV files under
+ * server/data/ (useful for offline development without a Sheets account).
+ *
+ * Endpoints
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  GET  /api/questions              → array of question objects
+ *  POST /api/questions              → append a new question row; returns { id }
+ *  PATCH /api/questions/:id/notes   → update notes column (col F) for one card
+ *
+ *  GET  /api/tasks                  → array of task objects
+ *  POST /api/tasks                  → append a new task row; returns { id }
+ *  PATCH /api/tasks/:id             → update status column (col F) for one task
+ *
+ *  GET  /api/schedule               → array of schedule event objects
+ *  POST /api/schedule               → append a new schedule event; returns { id }
+ *
+ *  GET  /api/warmup                 → array of warmup task objects
+ *  PATCH /api/warmup/:id            → mark a warmup task complete (writes today's date)
+ *
+ *  POST /api/results                → append a study-result row (append-only log)
+ *
+ * Deployment
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  Local dev:  node server/index.js  (or via `npm run server` from quiz-app/)
+ *  Vercel:     api/index.js imports this file and exports `app` as the handler.
+ *              app.listen() is skipped when process.env.VERCEL is set.
+ */
 import { config as dotenvConfig } from 'dotenv';
 import express from 'express';
 import cors from 'cors';

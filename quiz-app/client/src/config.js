@@ -1,3 +1,11 @@
+/**
+ * config.js — shared constants for the client.
+ *
+ * Swipe physics, card stack geometry, card-type identifiers, and localStorage
+ * key prefixes all live here so every component reads from one place.
+ * Do not put runtime state or API calls in this file.
+ */
+
 // ─── Swipe physics ────────────────────────────────────────────────────────────
 export const SWIPE_THRESHOLD_PX    = 90;   // min horizontal drag to register left/right swipe
 export const SWIPE_VELOCITY        = 0.5;  // min horizontal release velocity

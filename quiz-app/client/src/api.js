@@ -1,10 +1,11 @@
 /**
  * API_BASE — base URL prepended to every /api fetch call.
  *
- * Dev:  '' (empty) → Vite proxy forwards /api/* to localhost:3001
- * Prod: 'https://your-app.onrender.com' → direct HTTPS to Render
+ * Dev:        '' (empty) → Vite proxy forwards /api/* to localhost:3001
+ * Production: '' (empty) → Vercel serves frontend and API on the same domain,
+ *             so /api/* resolves to the same origin with no prefix needed.
  *
- * Set VITE_API_BASE as a GitHub repository secret; it gets injected at
- * build time by the GitHub Actions workflow. Leave it unset locally.
+ * VITE_API_BASE can be set if the API is ever hosted on a separate domain,
+ * but for the current Vercel deployment it is left unset (defaults to '').
  */
 export const API_BASE = import.meta.env.VITE_API_BASE ?? '';
