@@ -25,9 +25,7 @@ const __dirname = __here;  // reuse the dirname computed for dotenv above
 const app  = express();
 const PORT = process.env.PORT || 3001;
 
-// CORS_ORIGIN is set in the Render environment dashboard to the GitHub Pages URL.
-// When unset (local dev) cors({ origin: true }) reflects any origin.
-app.use(cors({ origin: process.env.CORS_ORIGIN || true }));
+app.use(cors());
 app.use(express.json());
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -296,8 +294,13 @@ app.patch('/api/warmup/:id', async (req, res) => {
   }
 });
 
-// ── Start ──────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  const mode = isSheetsConfigured() ? 'Google Sheets' : 'CSV files (Sheets not configured)';
-  console.log(`Server running at http://localhost:${PORT} — data source: ${mode}`);
-});
+// ── Start (local dev only) ─────────────────────────────────────────────────────
+// On Vercel the app is imported as a handler — app.listen() must not be called.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    const mode = isSheetsConfigured() ? 'Google Sheets' : 'CSV files (Sheets not configured)';
+    console.log(`Server running at http://localhost:${PORT} — data source: ${mode}`);
+  });
+}
+
+export default app;
