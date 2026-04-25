@@ -2,18 +2,18 @@
  * Summary — session-complete screen shown when all flashcards have been swiped.
  *
  * Props:
- *   stats   — { correct, incorrect } counts from useSession
+ *   stats   — { done, deferred } counts from useSession
  *   onReset — callback to restart the session
  */
 import '../styles/summary.css';
 
 const TILES = [
-  { key: 'correct',   label: 'Correct',   cls: 'tile-correct' },
-  { key: 'incorrect', label: 'Incorrect', cls: 'tile-missed'  },
+  { key: 'done',     label: 'Done',     cls: 'tile-correct'  },
+  { key: 'deferred', label: 'Deferred', cls: 'tile-deferred' },
 ];
 
 export default function Summary({ stats, onReset }) {
-  const total = stats.correct + stats.incorrect;
+  const total = stats.done + stats.deferred;
 
   return (
     <div className="summary-screen">

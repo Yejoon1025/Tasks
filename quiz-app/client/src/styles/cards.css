@@ -193,25 +193,22 @@
   border-radius: 100px;
   border: 1px solid transparent;
 }
-.badge-flash  {
+/* Deck name badge (FlashCard) — indigo */
+.badge-deck {
   color: var(--color-accent);
   background: var(--color-accent-dim);
   border-color: rgba(99, 102, 241, 0.2);
+}
+/* Project name badge (TaskCard) — amber */
+.badge-project {
+  color: var(--color-amber);
+  background: var(--color-amber-dim);
+  border-color: rgba(245, 158, 11, 0.2);
 }
 .badge-answer {
   color: var(--color-green);
   background: var(--color-green-dim);
   border-color: rgba(16, 185, 129, 0.2);
-}
-
-/* ── Card content: deck tag ──────────────────────────────────────────────── */
-.card-deck-tag {
-  font-size: 0.68rem;
-  font-weight: 500;
-  color: var(--color-text-3);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  margin-bottom: 4px;
 }
 
 /* ── Card content: body text ─────────────────────────────────────────────── */
@@ -258,7 +255,7 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.03em;
   color: var(--color-text-3);
-  pointer-events: none;
+  pointer-events: none;   /* idle: pass taps through; active/paused override this */
   transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
@@ -267,4 +264,15 @@
   color: var(--color-green);
   border-color: rgba(16, 185, 129, 0.3);
   background: var(--color-green-dim);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* Paused state — timer is paused */
+.card-timer-badge--paused {
+  color: var(--color-amber);
+  border-color: rgba(245, 158, 11, 0.3);
+  background: var(--color-amber-dim);
+  cursor: pointer;
+  pointer-events: auto;
 }

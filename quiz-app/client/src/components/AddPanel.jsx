@@ -85,7 +85,7 @@ export default function AddPanel({ defaultTab = 'question', onClose, onAdded }) 
       if (tab === 'question') {
         newItem = { id: String(id), front: qFront.trim(), back: qBack.trim(), deck: qDeck.trim(), time_spent_min: 0 };
       } else if (tab === 'task') {
-        newItem = { id: String(id), title: tTitle.trim(), description: tDesc.trim(), project: tProj.trim(), due_date: tDue, status: '' };
+        newItem = { id: String(id), title: tTitle.trim(), description: tDesc.trim(), project: tProj.trim(), due_date: tDue, time_spent_min: 0 };
       }
       // schedule: caller re-fetches via refresh()
 

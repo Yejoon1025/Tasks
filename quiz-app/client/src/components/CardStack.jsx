@@ -24,15 +24,16 @@ export default function CardStack({ questions, onSwipe, sessionStats, onReset })
 
   // ── Swipe left / right ─────────────────────────────────────────────────────
   // elapsedMinutes comes from DeckCard's stopwatch (decimal, 1 d.p., e.g. 1.5)
-  function handleSwipe(id, direction, type, elapsedMinutes) {
+  function handleSwipe(id, direction, _type, elapsedMinutes) {
     onSwipe(id, direction);
     setCurrentIndex(i => i - 1);
 
     // Fire-and-forget: log result to Google Sheets
+    // cardType is hardcoded — questions no longer carry a type field
     fetch(`${API_BASE}/api/results`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ cardId: id, cardType: type, direction }),
+      body:    JSON.stringify({ cardId: id, cardType: 'flashcard', direction }),
     }).catch(err => console.warn('Result sync failed:', err.message));
 
     // Accumulate time spent on this card (only if timer was running)

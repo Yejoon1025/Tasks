@@ -1,32 +1,49 @@
 /**
  * FlashCard — renders a two-sided flip card for question/answer pairs.
  *
- * Front: question + deck tag
- * Back:  answer text
- * Flip:  tap/click anywhere on the card
+ * Front: question text + deck badge
+ * Back:  answer text (only shown if non-empty)
+ * Flip:  double-tap anywhere on the card.  If back is empty the card never flips.
  */
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import '../../styles/cards.css';
 
+const DOUBLE_TAP_MS = 300;   // max gap between two taps to count as double-tap
+
 export default function FlashCard({ question }) {
-  const [flipped, setFlipped] = useState(false);
+  const [flipped,     setFlipped]     = useState(false);
+  const lastTapRef = useRef(0);
+
+  const hasBack = question.back && question.back.trim() !== '';
+
+  function handleTap() {
+    if (!hasBack) return;            // nothing to flip to
+    const now = Date.now();
+    if (now - lastTapRef.current < DOUBLE_TAP_MS) {
+      setFlipped(f => !f);
+      lastTapRef.current = 0;        // reset so a third tap doesn't flip again
+    } else {
+      lastTapRef.current = now;
+    }
+  }
 
   return (
-    <div className="card-inner-wrapper" onClick={() => setFlipped(f => !f)}>
+    <div className="card-inner-wrapper" onClick={handleTap}>
       <div className={`card-flip ${flipped ? 'is-flipped' : ''}`}>
 
         {/* ── Front face ─────────────────────────────────────────────────── */}
         <div className="card-face card-front">
-          <span className="card-badge badge-flash">Flashcard</span>
-          <p className="card-deck-tag">{question.deck}</p>
+          <span className="card-badge badge-deck">{question.deck || 'Card'}</span>
           <p className="card-body">{question.front}</p>
-          <span className="card-hint">
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-              <path d="M6 9.5V2.5M6 2.5L3 5.5M6 2.5L9 5.5"
-                stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Tap to flip
-          </span>
+          {hasBack && (
+            <span className="card-hint">
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M6 9.5V2.5M6 2.5L3 5.5M6 2.5L9 5.5"
+                  stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Double-tap to flip
+            </span>
+          )}
         </div>
 
         {/* ── Back face ──────────────────────────────────────────────────── */}

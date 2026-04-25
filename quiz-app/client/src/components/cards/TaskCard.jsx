@@ -1,7 +1,7 @@
 /**
  * TaskCard — single-faced card for a to-do task.
  *
- * Displays: title, description, project tag, and a colour-coded due date pill.
+ * Displays: project badge, title, description, and a colour-coded due date pill.
  * No flip — the whole card is the front.  Swiping is handled by the parent DeckCard.
  */
 import '../../styles/tasks.css';
@@ -16,9 +16,9 @@ function fmtDue(dateStr) {
   const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const diffDays = Math.round((due - todayMidnight) / 86_400_000);
 
-  if (diffDays < 0)  return { label: 'Overdue',   cls: 'tc-due--overdue'  };
-  if (diffDays === 0) return { label: 'Today',     cls: 'tc-due--today'   };
-  if (diffDays === 1) return { label: 'Tomorrow',  cls: 'tc-due--tomorrow' };
+  if (diffDays < 0)   return { label: 'Overdue',  cls: 'tc-due--overdue'  };
+  if (diffDays === 0) return { label: 'Today',    cls: 'tc-due--today'    };
+  if (diffDays === 1) return { label: 'Tomorrow', cls: 'tc-due--tomorrow' };
   return {
     label: due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     cls: 'tc-due--future',
@@ -32,9 +32,9 @@ export default function TaskCard({ question: task }) {
     <div className="tc-wrapper">
       <div className="card-face card-front tc-front">
 
-        {/* ── Top row: badge + due date ────────────────────────────────────── */}
+        {/* ── Top row: project badge + due date ───────────────────────────── */}
         <div className="tc-toprow">
-          <span className="card-badge tc-badge">Task</span>
+          <span className="card-badge badge-project">{task.project || 'Task'}</span>
           {due && <span className={`tc-due ${due.cls}`}>{due.label}</span>}
         </div>
 
@@ -46,9 +46,8 @@ export default function TaskCard({ question: task }) {
           <p className="tc-desc">{task.description}</p>
         )}
 
-        {/* ── Footer: project + hint ────────────────────────────────────────── */}
+        {/* ── Footer: drag hint ─────────────────────────────────────────────── */}
         <div className="tc-footer">
-          {task.project && <span className="tc-project">{task.project}</span>}
           <span className="card-hint" style={{ marginLeft: 'auto' }}>
             Drag to complete · swipe up to skip
           </span>

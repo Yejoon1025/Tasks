@@ -3,9 +3,10 @@
  *
  * Cards swiped right (Complete) or left (Defer) are permanently removed.
  * Cards swiped up (Skip) are re-queued at the back of the deck.
+ * Tasks due today cannot be skipped — DeckCard snaps back instead.
  *
- * Mirrors the CardStack mechanics but tracks completed/deferred instead of
- * correct/incorrect, and renders a task-specific done screen.
+ * Mirrors the CardStack mechanics but tracks completed/deferred totals
+ * and renders a task-specific done screen.
  */
 import { useState } from 'react';
 
@@ -16,6 +17,20 @@ import { API_BASE } from '../api.js';
 import '../styles/cards.css';
 import '../styles/tasks.css';
 import '../styles/summary.css';  // reuses .summary-grid / .summary-tile / .restart-btn
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+/** Returns true when a task's due_date is today (local timezone). */
+function isDueToday(task) {
+  if (!task.due_date) return false;
+  const due = new Date(task.due_date + 'T00:00:00');
+  const now = new Date();
+  return (
+    due.getFullYear() === now.getFullYear() &&
+    due.getMonth()    === now.getMonth()    &&
+    due.getDate()     === now.getDate()
+  );
+}
 
 export default function TaskStack({ tasks, onReset }) {
   // Enrich tasks with type + _version so DeckCard can re-mount re-queued cards
@@ -35,13 +50,21 @@ export default function TaskStack({ tasks, onReset }) {
     }));
     setCurrentIndex(i => i - 1);
 
-    // Write status and elapsed time back to Google Sheets
-    const status = direction === 'right' ? 'completed' : 'deferred';
-    fetch(`${API_BASE}/api/tasks/${id}`, {
-      method:  'PATCH',
+    // Log result to Results sheet
+    fetch(`${API_BASE}/api/results`, {
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ status, time_spent_min: elapsedMinutes }),
-    }).catch(err => console.warn('Task sync failed:', err.message));
+      body:    JSON.stringify({ cardId: id, cardType: 'task', direction }),
+    }).catch(err => console.warn('Result sync failed:', err.message));
+
+    // Accumulate time spent (no status written — direction is captured in results)
+    if (elapsedMinutes > 0) {
+      fetch(`${API_BASE}/api/tasks/${id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ time_spent_min: elapsedMinutes }),
+      }).catch(err => console.warn('Task sync failed:', err.message));
+    }
   }
 
   // ── Swipe up: re-queue at the back ─────────────────────────────────────────
@@ -54,7 +77,7 @@ export default function TaskStack({ tasks, onReset }) {
     });
     // currentIndex stays the same — now points to the next card
 
-    // Accumulate time without changing status (task is re-queued, not completed)
+    // Accumulate time spent before the skip
     if (elapsedMinutes > 0) {
       fetch(`${API_BASE}/api/tasks/${id}`, {
         method:  'PATCH',
@@ -107,6 +130,7 @@ export default function TaskStack({ tasks, onReset }) {
             question={task}
             onSwipe={handleSwipe}
             onSkip={handleSkip}
+            skipDisabled={isDueToday(task)}
             stackStyle={{
               transform:     `scale(${scale}) translateY(${translateY}px)`,
               zIndex:        index,

@@ -4,13 +4,14 @@
  * Gestures:
  *   Left / Right → record result, card flies off horizontally
  *   Up           → re-queue card (moves to end of deck), card flies off upward
+ *                  If skipDisabled=true the card snaps back instead of flying off.
  *
  * Timer:
- *   Starts the first time the user taps the card surface (idempotent).
- *   Elapsed time (in decimal minutes, 1 d.p.) is passed to onSwipe so callers
- *   can persist it to Google Sheets.  Time is NOT reported on skip (up-swipe)
- *   because the card will return and time will be tracked when it is finally
- *   acted on.
+ *   Starts the first time the user taps the card surface (idle → running).
+ *   Tap the timer badge while running to pause; tap again to resume (paused → running).
+ *   Elapsed time (in decimal minutes, 1 d.p.) is passed to onSwipe / onSkip so callers
+ *   can persist it.  Time is tracked even on skip (the card will return and time will
+ *   continue accumulating).
  *
  * Delegates face rendering to FlashCard, TaskCard, or WarmupCard.
  */
@@ -36,11 +37,11 @@ import {
 import '../../styles/cards.css';
 
 // ─── Label copy per card type ──────────────────────────────────────────────
-// Questions from the API have no explicit type tag, so DEFAULT_LABELS applies.
-const DEFAULT_LABELS = { right: 'Correct', left: 'Incorrect', up: 'Again' };
+// Questions have no type tag so DEFAULT_LABELS applies.
+const DEFAULT_LABELS = { right: 'Done',     left: 'Defer',  up: 'Skip' };
 const LABELS = {
-  [CARD_TYPE.TASK]:   { right: 'Complete', left: 'Defer', up: 'Skip' },
-  [CARD_TYPE.WARMUP]: { right: 'Done',     left: 'Skip',  up: 'Skip' },
+  [CARD_TYPE.TASK]:   { right: 'Complete', left: 'Defer',  up: 'Skip' },
+  [CARD_TYPE.WARMUP]: { right: 'Done',     left: 'Skip',   up: 'Skip' },
 };
 
 // ─── Timer helpers ─────────────────────────────────────────────────────────
@@ -51,19 +52,8 @@ function formatElapsed(totalSeconds) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-/**
- * Compute decimal minutes from a start timestamp.
- * Returns a value rounded to 1 decimal place (e.g. 1.5 = 1m 30s).
- * Returns 0 if the timer was never started.
- */
-function computeMinutes(startTimeMs) {
-  if (!startTimeMs) return 0;
-  const seconds = Math.floor((Date.now() - startTimeMs) / 1000);
-  return Math.round(seconds / 6) / 10; // /6 = /60*10, then /10 = 1 d.p.
-}
-
 // ──────────────────────────────────────────────────────────────────────────
-export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
+export default function DeckCard({ question, onSwipe, onSkip, stackStyle, skipDisabled = false }) {
   const [gone, setGone] = useState(false);
 
   const { right: rightLabel, left: leftLabel, up: upLabel } =
@@ -72,21 +62,57 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
   // ── Spring ──────────────────────────────────────────────────────────────
   const [{ x, y, rotate }, api] = useSpring(() => ({ x: 0, y: 0, rotate: 0 }));
 
-  // ── Timer ────────────────────────────────────────────────────────────────
-  const [timerActive,   setTimerActive]   = useState(false);
+  // ── Timer — three states: 'idle' | 'running' | 'paused' ─────────────────
+  const [timerState,     setTimerState]     = useState('idle');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const startTimeRef  = useRef(null);  // ms timestamp of timer start
-  const intervalRef   = useRef(null);  // setInterval handle
+  const startTimeRef   = useRef(null);   // start of current running window (ms)
+  const accumulatedRef = useRef(0);      // ms from all completed running windows
+  const intervalRef    = useRef(null);
 
-  /** Start the timer on first tap. Idempotent — safe to call multiple times. */
+  /** Start interval that updates display every second. */
+  function startTick() {
+    clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      const ms = accumulatedRef.current +
+        (startTimeRef.current ? Date.now() - startTimeRef.current : 0);
+      setElapsedSeconds(Math.floor(ms / 1000));
+    }, 1000);
+  }
+
+  /** First tap on card surface: idle → running. Idempotent. */
   function startTimer() {
-    if (timerActive || gone) return;
-    setTimerActive(true);
+    if (timerState !== 'idle' || gone) return;
     startTimeRef.current = Date.now();
-    intervalRef.current = setInterval(
-      () => setElapsedSeconds(s => s + 1),
-      1000,
-    );
+    setTimerState('running');
+    startTick();
+  }
+
+  /**
+   * Tap on timer badge: toggle running ↔ paused.
+   * Stops propagation so the card surface onClick doesn't also fire.
+   */
+  function toggleTimer(e) {
+    e.stopPropagation();
+    if (timerState === 'running') {
+      // Pause: bank elapsed ms, stop interval
+      accumulatedRef.current += Date.now() - startTimeRef.current;
+      startTimeRef.current = null;
+      clearInterval(intervalRef.current);
+      setTimerState('paused');
+    } else if (timerState === 'paused') {
+      // Resume: start a new running window
+      startTimeRef.current = Date.now();
+      setTimerState('running');
+      startTick();
+    }
+  }
+
+  /** Compute total decimal minutes at swipe/skip time (accurate to 1 d.p.). */
+  function computeMinutes() {
+    const ms = accumulatedRef.current +
+      (startTimeRef.current ? Date.now() - startTimeRef.current : 0);
+    const seconds = Math.floor(ms / 1000);
+    return Math.round(seconds / 6) / 10;   // /6 = /60*10, then /10 = 1 d.p.
   }
 
   // Clear the interval when the card unmounts (post-swipe animation cleanup)
@@ -128,6 +154,11 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
           Math.abs(mx) > SWIPE_THRESHOLD_PX || Math.abs(vx) > SWIPE_VELOCITY;
 
         if (isUp) {
+          if (skipDisabled) {
+            // Due-today tasks can't be skipped — snap back with a bounce
+            api.start({ x: 0, y: 0, rotate: 0, config: { tension: 460, friction: 32 } });
+            return;
+          }
           setGone(true);
           api.start({
             y:      -FLY_DISTANCE_PX,
@@ -136,9 +167,7 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
             config: { tension: 300, friction: 22 },
             onRest: () => {
               clearInterval(intervalRef.current);
-              // Pass elapsed minutes so callers can add this session's time
-              // before re-queuing the card
-              onSkip(question.id, computeMinutes(startTimeRef.current));
+              onSkip(question.id, computeMinutes());
             },
           });
         } else if (isHorizontal) {
@@ -151,8 +180,7 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
             config: { tension: 300, friction: 22 },
             onRest: () => {
               clearInterval(intervalRef.current);
-              // Pass elapsed minutes so callers can persist to Sheets
-              onSwipe(question.id, dir, question.type, computeMinutes(startTimeRef.current));
+              onSwipe(question.id, dir, question.type, computeMinutes());
             },
           });
         } else {
@@ -163,6 +191,17 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
     },
     { filterTaps: true, pointer: { touch: true } },
   );
+
+  // ── Timer badge appearance ────────────────────────────────────────────────
+  const timerCls =
+    timerState === 'running' ? ' card-timer-badge--active'
+    : timerState === 'paused'  ? ' card-timer-badge--paused'
+    : '';
+
+  const timerContent =
+    timerState === 'idle'   ? '⏱'
+    : timerState === 'paused' ? `⏸ ${formatElapsed(elapsedSeconds)}`
+    : formatElapsed(elapsedSeconds);
 
   return (
     <animated.div
@@ -179,12 +218,15 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
       {/* Up drag indicator */}
       <animated.div className="skip-label" style={{ opacity: upOpacity }}>{upLabel}</animated.div>
 
-      {/* Timer badge — tapping the card surface starts it */}
-      <div className={`card-timer-badge${timerActive ? ' card-timer-badge--active' : ''}`}>
-        {timerActive ? formatElapsed(elapsedSeconds) : '⏱'}
+      {/* Timer badge — idle: tap card surface to start; running/paused: tap badge to toggle */}
+      <div
+        className={`card-timer-badge${timerCls}`}
+        onClick={timerState !== 'idle' ? toggleTimer : undefined}
+      >
+        {timerContent}
       </div>
 
-      {/* Card surface — onClick starts the timer on first tap */}
+      {/* Card surface — first tap starts the timer */}
       <animated.div className="deck-card-surface" style={{ background: surfaceBg }} onClick={startTimer}>
         {question.type === CARD_TYPE.TASK
           ? <TaskCard   question={question} />

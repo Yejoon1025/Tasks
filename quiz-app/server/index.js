@@ -13,7 +13,7 @@
  *
  *  GET  /api/tasks                  → array of task objects
  *  POST /api/tasks                  → append a new task row; returns { id }
- *  PATCH /api/tasks/:id             → update status (col F) and accumulate time (col G)
+ *  PATCH /api/tasks/:id             → accumulate time_spent_min (col F)
  *
  *  GET  /api/schedule               → array of schedule event objects
  *  POST /api/schedule               → append a new schedule event; returns { id }
@@ -125,14 +125,14 @@ app.post('/api/questions', async (req, res) => {
 
 // ── POST /api/tasks ───────────────────────────────────────────────────────────
 // Append a new task row to the Tasks sheet (or CSV fallback).
-// Tasks sheet columns: A=id  B=title  C=description  D=project  E=due_date  F=status
+// Tasks sheet columns: A=id  B=title  C=description  D=project  E=due_date  F=time_spent_min
 app.post('/api/tasks', async (req, res) => {
   const { title, description, project, due_date } = req.body;
   if (!title)
     return res.status(400).json({ error: 'title is required.' });
 
   const id  = Date.now();
-  const row = [id, String(title), String(description ?? ''), String(project ?? ''), String(due_date ?? ''), ''];
+  const row = [id, String(title), String(description ?? ''), String(project ?? ''), String(due_date ?? ''), 0];
 
   if (!isSheetsConfigured()) {
     const line = row.map(csvField).join(',') + '\n';
@@ -205,21 +205,15 @@ app.get('/api/tasks', async (req, res) => {
 });
 
 // ── PATCH /api/tasks/:id ───────────────────────────────────────────────────────
-// Update task status (col F, optional) and/or accumulate time_spent_min (col G).
-// Called with status on left/right swipe; called with only time_spent_min on skip.
-// Tasks sheet columns: A=id  B=title  C=description  D=project  E=due_date  F=status  G=time_spent_min
+// Accumulate time_spent_min (col F).  Results (done / deferred) are logged to
+// the Results sheet via POST /api/results and are not stored on the task row.
+// Tasks sheet columns: A=id  B=title  C=description  D=project  E=due_date  F=time_spent_min
 app.patch('/api/tasks/:id', async (req, res) => {
-  const { id }                       = req.params;
-  const { status, time_spent_min }   = req.body;
-
-  // status is optional — only validate when provided
-  const VALID = ['completed', 'deferred', ''];
-  if (status !== undefined && !VALID.includes(status)) {
-    return res.status(400).json({ error: `Invalid status "${status}".` });
-  }
+  const { id }              = req.params;
+  const { time_spent_min }  = req.body;
 
   if (!isSheetsConfigured()) {
-    return res.json({ id, status, persisted: false });
+    return res.json({ id, persisted: false });
   }
 
   try {
@@ -227,18 +221,14 @@ app.patch('/api/tasks/:id', async (req, res) => {
     const task  = tasks.find(t => String(t.id) === String(id));
     if (!task) return res.status(404).json({ error: `Task ${id} not found.` });
 
-    if (status !== undefined) {
-      await updateCell('Tasks', task._sheetRow, 'F', status);
-    }
-
     // Accumulate time if the timer was running
     if (time_spent_min > 0) {
       const current = parseFloat(task.time_spent_min) || 0;
       const updated = Math.round((current + time_spent_min) * 10) / 10;
-      await updateCell('Tasks', task._sheetRow, 'G', updated);
+      await updateCell('Tasks', task._sheetRow, 'F', updated);
     }
 
-    res.json({ id, status, persisted: true });
+    res.json({ id, persisted: true });
   } catch (err) {
     console.error('Sheets write error (task):', err.message);
     res.status(500).json({ error: 'Failed to update task.' });
@@ -279,8 +269,8 @@ app.patch('/api/questions/:id/time', async (req, res) => {
 // Append a study result row to the Results sheet (append-only log).
 // Results sheet columns: timestamp  card_id  card_type  result
 const RESULT_LABEL = {
-  flashcard:    { right: 'correct',   left: 'incorrect' },
-  'open-ended': { right: 'done',      left: 'later'     },
+  flashcard: { right: 'done',      left: 'deferred'  },
+  task:      { right: 'completed', left: 'deferred'  },
 };
 
 app.post('/api/results', async (req, res) => {

@@ -23,13 +23,6 @@
   width: 100%;
 }
 
-/* ── Task badge ──────────────────────────────────────────────────────────── */
-.tc-badge {
-  color: var(--color-accent);
-  background: var(--color-accent-dim);
-  border-color: rgba(99, 102, 241, 0.2);
-}
-
 /* ── Due date pill ───────────────────────────────────────────────────────── */
 .tc-due {
   font-size: 0.62rem;
