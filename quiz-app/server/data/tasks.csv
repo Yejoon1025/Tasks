@@ -1,9 +1,9 @@
-id,title,description,project,due_date
-1,Refactor auth module,Extract token logic into its own service and add unit tests,Backend,2026-04-23
-2,Design onboarding screens,Create high-fidelity mockups for the 3-step onboarding flow,Design,2026-04-24
-3,Write weekly status update,Summarise sprint progress and blockers for the team channel,Comms,2026-04-22
-4,Fix mobile nav overflow,Nav links wrap on 375px screens — add ellipsis or hamburger menu,Frontend,2026-04-22
-5,Set up staging environment,Configure CI/CD pipeline to deploy on every merge to main,DevOps,2026-04-25
-6,Review PR #48,Code review for the new CSV parser implementation,Backend,2026-04-22
-7,Update README dependencies,Bump listed Node/npm versions and add setup steps for Windows,Docs,2026-04-26
-8,Sketch Q2 roadmap,Draft high-level feature priorities for the next quarter,Strategy,2026-04-30
+id,title,description,project,due_date,status,time_spent_min
+1,Refactor auth module,Extract token logic into its own service and add unit tests,Backend,2026-04-23,,0
+2,Design onboarding screens,Create high-fidelity mockups for the 3-step onboarding flow,Design,2026-04-24,,0
+3,Write weekly status update,Summarise sprint progress and blockers for the team channel,Comms,2026-04-22,,0
+4,Fix mobile nav overflow,Nav links wrap on 375px screens — add ellipsis or hamburger menu,Frontend,2026-04-22,,0
+5,Set up staging environment,Configure CI/CD pipeline to deploy on every merge to main,DevOps,2026-04-25,,0
+6,Review PR #48,Code review for the new CSV parser implementation,Backend,2026-04-22,,0
+7,Update README dependencies,Bump listed Node/npm versions and add setup steps for Windows,Docs,2026-04-26,,0
+8,Sketch Q2 roadmap,Draft high-level feature priorities for the next quarter,Strategy,2026-04-30,,0

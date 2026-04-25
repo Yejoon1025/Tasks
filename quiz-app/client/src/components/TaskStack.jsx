@@ -26,7 +26,8 @@ export default function TaskStack({ tasks, onReset }) {
   const [stats, setStats] = useState({ completed: 0, deferred: 0 });
 
   // ── Swipe left / right ─────────────────────────────────────────────────────
-  function handleSwipe(id, direction) {
+  // elapsedMinutes comes from DeckCard's stopwatch (decimal, 1 d.p.)
+  function handleSwipe(id, direction, _type, elapsedMinutes) {
     setStats(s => ({
       ...s,
       completed: direction === 'right' ? s.completed + 1 : s.completed,
@@ -34,12 +35,12 @@ export default function TaskStack({ tasks, onReset }) {
     }));
     setCurrentIndex(i => i - 1);
 
-    // Fire-and-forget: write status back to Google Sheets (silent on failure)
+    // Write status and elapsed time back to Google Sheets
     const status = direction === 'right' ? 'completed' : 'deferred';
     fetch(`${API_BASE}/api/tasks/${id}`, {
       method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ status }),
+      body:    JSON.stringify({ status, time_spent_min: elapsedMinutes }),
     }).catch(err => console.warn('Task sync failed:', err.message));
   }
 

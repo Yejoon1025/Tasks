@@ -1,13 +1,10 @@
 /**
- * CardStack — manages the deck of cards and progress tracking.
+ * CardStack — manages the deck of flashcards and progress tracking.
  *
- * Cards swiped left/right are recorded and removed from the active deck.
+ * Cards swiped left/right are recorded, removed from the active deck, and
+ * their elapsed time (from DeckCard's stopwatch) is persisted to Sheets.
  * Cards swiped up are re-queued at the back of the deck with a bumped
- * _version so their DeckCard component remounts fresh when they return.
- *
- * Notes on open-ended cards survive re-queueing because they are stored in
- * localStorage (keyed by question.id) in OpenEndedCard, independent of
- * React component lifecycle.
+ * _version so their DeckCard remounts fresh — timer resets automatically.
  */
 import { useState } from 'react';
 
@@ -26,16 +23,26 @@ export default function CardStack({ questions, onSwipe, sessionStats, onReset })
   const [currentIndex, setCurrentIndex] = useState(deck.length - 1);
 
   // ── Swipe left / right ─────────────────────────────────────────────────────
-  function handleSwipe(id, direction, type) {
-    onSwipe(id, direction, type);
+  // elapsedMinutes comes from DeckCard's stopwatch (decimal, 1 d.p., e.g. 1.5)
+  function handleSwipe(id, direction, type, elapsedMinutes) {
+    onSwipe(id, direction);
     setCurrentIndex(i => i - 1);
 
-    // Fire-and-forget: log result to Google Sheets (silent on failure)
+    // Fire-and-forget: log result to Google Sheets
     fetch(`${API_BASE}/api/results`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ cardId: id, cardType: type, direction }),
     }).catch(err => console.warn('Result sync failed:', err.message));
+
+    // Accumulate time spent on this card (only if timer was running)
+    if (elapsedMinutes > 0) {
+      fetch(`${API_BASE}/api/questions/${id}/time`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ minutes: elapsedMinutes }),
+      }).catch(err => console.warn('Time sync failed:', err.message));
+    }
   }
 
   // ── Swipe up: re-queue at the back ─────────────────────────────────────────

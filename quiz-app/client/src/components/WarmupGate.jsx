@@ -33,19 +33,21 @@ export default function WarmupGate({ tasks, onComplete }) {
   const [currentIndex, setCurrentIndex] = useState(tasks.length - 1);
   const [done, setDone] = useState(false);
 
-  /** Mark a task as done on the server (fire-and-forget).
-   *  Sends the client's local date so the server stores the correct value. */
-  function markDone(id) {
+  /**
+   * Mark a task as done on the server (fire-and-forget).
+   * Sends the client's local date (correct timezone) and any elapsed time.
+   */
+  function markDone(id, elapsedMinutes) {
     fetch(`${API_BASE}/api/warmup/${id}`, {
       method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ date: todayStr() }),
+      body:    JSON.stringify({ date: todayStr(), time_spent_min: elapsedMinutes }),
     }).catch(err => console.warn('Warmup sync failed:', err.message));
   }
 
   /** Left / right swipe — both directions count as done for warmup. */
-  function handleSwipe(id) {
-    markDone(id);
+  function handleSwipe(id, _dir, _type, elapsedMinutes) {
+    markDone(id, elapsedMinutes);
     const next = currentIndex - 1;
     if (next < 0) {
       setDone(true);
@@ -54,9 +56,9 @@ export default function WarmupGate({ tasks, onComplete }) {
     }
   }
 
-  /** Up swipe — also counts as skip/done for warmup (no re-queue). */
+  /** Up swipe — also counts as done for warmup (no re-queue needed). */
   function handleSkip(id) {
-    markDone(id);
+    markDone(id, 0); // no time tracked on skip
     const next = currentIndex - 1;
     if (next < 0) {
       setDone(true);

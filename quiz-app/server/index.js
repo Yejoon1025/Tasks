@@ -9,17 +9,17 @@
  * ─────────────────────────────────────────────────────────────────────────────
  *  GET  /api/questions              → array of question objects
  *  POST /api/questions              → append a new question row; returns { id }
- *  PATCH /api/questions/:id/notes   → update notes column (col F) for one card
+ *  PATCH /api/questions/:id/time    → accumulate time_spent_min (col F) for one card
  *
  *  GET  /api/tasks                  → array of task objects
  *  POST /api/tasks                  → append a new task row; returns { id }
- *  PATCH /api/tasks/:id             → update status column (col F) for one task
+ *  PATCH /api/tasks/:id             → update status (col F) and accumulate time (col G)
  *
  *  GET  /api/schedule               → array of schedule event objects
  *  POST /api/schedule               → append a new schedule event; returns { id }
  *
  *  GET  /api/warmup                 → array of warmup task objects
- *  PATCH /api/warmup/:id            → mark a warmup task complete (writes today's date)
+ *  PATCH /api/warmup/:id            → write last_completed date (col D) and accumulate time (col E)
  *
  *  POST /api/results                → append a study-result row (append-only log)
  *
@@ -97,14 +97,14 @@ app.get('/api/questions', async (req, res) => {
 
 // ── POST /api/questions ────────────────────────────────────────────────────────
 // Append a new question row to the Questions sheet (or CSV fallback).
-// Questions sheet columns: A=id  B=type  C=front  D=back  E=deck  F=notes
+// Questions sheet columns: A=id  B=type  C=front  D=back  E=deck  F=time_spent_min
 app.post('/api/questions', async (req, res) => {
   const { type, front, back, deck } = req.body;
   if (!type || !front || !deck)
     return res.status(400).json({ error: 'type, front, and deck are required.' });
 
   const id  = Date.now();
-  const row = [id, type, String(front), String(back ?? ''), String(deck), ''];
+  const row = [id, type, String(front), String(back ?? ''), String(deck), 0];
 
   if (!isSheetsConfigured()) {
     // CSV fallback — append a line to questions.csv
@@ -205,11 +205,11 @@ app.get('/api/tasks', async (req, res) => {
 });
 
 // ── PATCH /api/tasks/:id ───────────────────────────────────────────────────────
-// Write task completion status back to the Tasks sheet (column F).
-// Tasks sheet columns: A=id  B=title  C=description  D=project  E=due_date  F=status
+// Write task status (col F) and accumulate time_spent_min (col G).
+// Tasks sheet columns: A=id  B=title  C=description  D=project  E=due_date  F=status  G=time_spent_min
 app.patch('/api/tasks/:id', async (req, res) => {
-  const { id }     = req.params;
-  const { status } = req.body; // 'completed' | 'deferred' | ''
+  const { id }                       = req.params;
+  const { status, time_spent_min }   = req.body;
 
   const VALID = ['completed', 'deferred', ''];
   if (!VALID.includes(status)) {
@@ -217,7 +217,6 @@ app.patch('/api/tasks/:id', async (req, res) => {
   }
 
   if (!isSheetsConfigured()) {
-    // CSV mode: acknowledge silently — no persistent write possible
     return res.json({ id, status, persisted: false });
   }
 
@@ -227,34 +226,48 @@ app.patch('/api/tasks/:id', async (req, res) => {
     if (!task) return res.status(404).json({ error: `Task ${id} not found.` });
 
     await updateCell('Tasks', task._sheetRow, 'F', status);
+
+    // Accumulate time if the timer was running during this swipe
+    if (time_spent_min > 0) {
+      const current = parseFloat(task.time_spent_min) || 0;
+      const updated = Math.round((current + time_spent_min) * 10) / 10;
+      await updateCell('Tasks', task._sheetRow, 'G', updated);
+    }
+
     res.json({ id, status, persisted: true });
   } catch (err) {
     console.error('Sheets write error (task status):', err.message);
-    res.status(500).json({ error: 'Failed to update task status.' });
+    res.status(500).json({ error: 'Failed to update task.' });
   }
 });
 
-// ── PATCH /api/questions/:id/notes ────────────────────────────────────────────
-// Write open-ended card notes back to the Questions sheet (column F).
-// Questions sheet columns: A=id  B=type  C=front  D=back  E=deck  F=notes
-app.patch('/api/questions/:id/notes', async (req, res) => {
-  const { id }   = req.params;
-  const { note } = req.body;
+// ── PATCH /api/questions/:id/time ─────────────────────────────────────────────
+// Accumulate time spent studying a card (column F = time_spent_min).
+// Reads the current value, adds the new minutes, writes back.
+// Questions sheet columns: A=id  B=type  C=front  D=back  E=deck  F=time_spent_min
+app.patch('/api/questions/:id/time', async (req, res) => {
+  const { id }      = req.params;
+  const { minutes } = req.body;   // decimal minutes this session (e.g. 1.5)
 
-  if (!isSheetsConfigured()) {
+  if (!minutes || minutes <= 0)
     return res.json({ id, persisted: false });
-  }
+
+  if (!isSheetsConfigured())
+    return res.json({ id, persisted: false });
 
   try {
     const questions = await getSheet('Questions');
     const question  = questions.find(q => String(q.id) === String(id));
     if (!question) return res.status(404).json({ error: `Question ${id} not found.` });
 
-    await updateCell('Questions', question._sheetRow, 'F', note ?? '');
-    res.json({ id, persisted: true });
+    const current = parseFloat(question.time_spent_min) || 0;
+    const updated = Math.round((current + minutes) * 10) / 10;
+
+    await updateCell('Questions', question._sheetRow, 'F', updated);
+    res.json({ id, time_spent_min: updated, persisted: true });
   } catch (err) {
-    console.error('Sheets write error (notes):', err.message);
-    res.status(500).json({ error: 'Failed to update notes.' });
+    console.error('Sheets write error (question time):', err.message);
+    res.status(500).json({ error: 'Failed to update time.' });
   }
 });
 
@@ -302,13 +315,14 @@ app.get('/api/warmup', async (req, res) => {
 });
 
 // ── PATCH /api/warmup/:id ──────────────────────────────────────────────────────
-// Mark a warmup task completed for today (writes today's YYYY-MM-DD to column D).
-// Warmup sheet columns: A=id  B=title  C=description  D=last_completed
+// Mark a warmup task complete: write last_completed date (col D) and accumulate time (col E).
+// Warmup sheet columns: A=id  B=title  C=description  D=last_completed  E=time_spent_min
 app.patch('/api/warmup/:id', async (req, res) => {
-  const { id } = req.params;
+  const { id }                     = req.params;
+  const { time_spent_min }         = req.body;
   // Prefer the client-sent local date so the stored value matches what the
   // client compares against (local YYYY-MM-DD, not server UTC).
-  const today  = req.body.date || new Date().toISOString().slice(0, 10);
+  const today = req.body.date || new Date().toISOString().slice(0, 10);
 
   if (!isSheetsConfigured()) {
     return res.json({ id, last_completed: today, persisted: false });
@@ -320,6 +334,14 @@ app.patch('/api/warmup/:id', async (req, res) => {
     if (!task) return res.status(404).json({ error: `Warmup task ${id} not found.` });
 
     await updateCell('Warmup', task._sheetRow, 'D', today);
+
+    // Accumulate time if the timer was running
+    if (time_spent_min > 0) {
+      const current = parseFloat(task.time_spent_min) || 0;
+      const updated = Math.round((current + time_spent_min) * 10) / 10;
+      await updateCell('Warmup', task._sheetRow, 'E', updated);
+    }
+
     res.json({ id, last_completed: today, persisted: true });
   } catch (err) {
     console.error('Sheets write error (warmup):', err.message);

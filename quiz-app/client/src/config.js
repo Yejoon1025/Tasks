@@ -16,19 +16,17 @@ export const FLY_ROTATION_DEG      = 18;   // max tilt when flying off left/righ
 export const DRAG_ROTATION_DIV     = 35;   // divisor for gentle rotation while dragging
 
 // ─── Card deck ────────────────────────────────────────────────────────────────
-export const VISIBLE_CARD_COUNT  = 3;    // how many stacked cards are rendered
-export const STACK_SCALE_STEP    = 0.035;// scale reduction per depth level
-export const STACK_OFFSET_PX     = 8;    // px translateY per depth level
+export const VISIBLE_CARD_COUNT  = 3;     // how many stacked cards are rendered
+export const STACK_SCALE_STEP    = 0.035; // scale reduction per depth level
+export const STACK_OFFSET_PX     = 8;     // px translateY per depth level
 
 // ─── Card types ───────────────────────────────────────────────────────────────
 export const CARD_TYPE = {
-  FLASHCARD:  'flashcard',
-  OPEN_ENDED: 'open-ended',
-  TASK:       'task',
-  WARMUP:     'warmup',
+  FLASHCARD: 'flashcard',
+  TASK:      'task',
+  WARMUP:    'warmup',
 };
 
 // ─── Session storage ──────────────────────────────────────────────────────────
 export const SESSION_STORAGE_KEY   = 'quiz_session';
-export const NOTE_STORAGE_PREFIX   = 'quiz_note_';
 export const WARMUP_CLEARED_PREFIX = 'warmup_cleared_'; // + YYYY-MM-DD

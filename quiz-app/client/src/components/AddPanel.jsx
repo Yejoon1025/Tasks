@@ -1,5 +1,5 @@
 /**
- * AddPanel — bottom-sheet form for adding a question, task, or schedule event.
+ * AddPanel — bottom-sheet form for adding a flashcard, task, or schedule event.
  *
  * Props:
  *   defaultTab  — 'question' | 'task' | 'schedule'  (which tab opens first)
@@ -10,18 +10,16 @@
  *       type='schedule' → item is null (caller should re-fetch via refreshSchedule)
  */
 import { useState } from 'react';
-import { CARD_TYPE } from '../config.js';
 import { API_BASE } from '../api.js';
 import '../styles/add-panel.css';
 
 const TABS = ['question', 'task', 'schedule'];
-const TAB_LABEL = { question: 'Question', task: 'Task', schedule: 'Schedule' };
+const TAB_LABEL = { question: 'Flashcard', task: 'Task', schedule: 'Schedule' };
 
 export default function AddPanel({ defaultTab = 'question', onClose, onAdded }) {
   const [tab, setTab] = useState(defaultTab);
 
-  // ── Question state ───────────────────────────────────────────────────────
-  const [qType,  setQType]  = useState(CARD_TYPE.FLASHCARD);
+  // ── Question (flashcard) state ───────────────────────────────────────────
   const [qFront, setQFront] = useState('');
   const [qBack,  setQBack]  = useState('');
   const [qDeck,  setQDeck]  = useState('');
@@ -60,7 +58,7 @@ export default function AddPanel({ defaultTab = 'question', onClose, onAdded }) 
 
       if (tab === 'question') {
         url  = `${API_BASE}/api/questions`;
-        body = { type: qType, front: qFront.trim(), back: qBack.trim(), deck: qDeck.trim() };
+        body = { type: 'flashcard', front: qFront.trim(), back: qBack.trim(), deck: qDeck.trim() };
       } else if (tab === 'task') {
         url  = `${API_BASE}/api/tasks`;
         body = { title: tTitle.trim(), description: tDesc.trim(), project: tProj.trim(), due_date: tDue };
@@ -85,7 +83,7 @@ export default function AddPanel({ defaultTab = 'question', onClose, onAdded }) 
       // Build a local object for immediate in-app update
       let newItem = null;
       if (tab === 'question') {
-        newItem = { id: String(id), type: qType, front: qFront.trim(), back: qBack.trim(), deck: qDeck.trim(), notes: '' };
+        newItem = { id: String(id), type: 'flashcard', front: qFront.trim(), back: qBack.trim(), deck: qDeck.trim(), time_spent_min: 0 };
       } else if (tab === 'task') {
         newItem = { id: String(id), title: tTitle.trim(), description: tDesc.trim(), project: tProj.trim(), due_date: tDue, status: '' };
       }
@@ -125,37 +123,19 @@ export default function AddPanel({ defaultTab = 'question', onClose, onAdded }) 
         {/* ── Form ──────────────────────────────────────────────────── */}
         <form className="add-form" onSubmit={handleSubmit}>
 
-          {/* ── Question fields ─────────────────────────────────────── */}
+          {/* ── Flashcard fields ────────────────────────────────────── */}
           {tab === 'question' && (
             <>
               <div className="add-field">
-                <label>Type</label>
-                <div className="add-type-row">
-                  <button type="button"
-                    className={`add-type-btn${qType === CARD_TYPE.FLASHCARD ? ' add-type-btn--active' : ''}`}
-                    onClick={() => setQType(CARD_TYPE.FLASHCARD)}>
-                    Flashcard
-                  </button>
-                  <button type="button"
-                    className={`add-type-btn${qType === CARD_TYPE.OPEN_ENDED ? ' add-type-btn--active' : ''}`}
-                    onClick={() => setQType(CARD_TYPE.OPEN_ENDED)}>
-                    Open-Ended
-                  </button>
-                </div>
+                <label>Question</label>
+                <textarea value={qFront} onChange={e => setQFront(e.target.value)}
+                  placeholder="What is…?" required />
               </div>
               <div className="add-field">
-                <label>{qType === CARD_TYPE.FLASHCARD ? 'Question' : 'Prompt'}</label>
-                <textarea value={qFront} onChange={e => setQFront(e.target.value)}
-                  placeholder={qType === CARD_TYPE.FLASHCARD ? 'What is…?' : 'Reflect on…'}
-                  required />
+                <label>Answer</label>
+                <textarea value={qBack} onChange={e => setQBack(e.target.value)}
+                  placeholder="The answer is…" />
               </div>
-              {qType === CARD_TYPE.FLASHCARD && (
-                <div className="add-field">
-                  <label>Answer</label>
-                  <textarea value={qBack} onChange={e => setQBack(e.target.value)}
-                    placeholder="The answer is…" />
-                </div>
-              )}
               <div className="add-field">
                 <label>Deck</label>
                 <input value={qDeck} onChange={e => setQDeck(e.target.value)}

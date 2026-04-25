@@ -1,20 +1,26 @@
 /**
- * DeckCard — spring-animated drag wrapper.
+ * DeckCard — spring-animated drag wrapper with a built-in stopwatch.
  *
  * Gestures:
  *   Left / Right → record result, card flies off horizontally
  *   Up           → re-queue card (moves to end of deck), card flies off upward
  *
- * Delegates face rendering to FlashCard or OpenEndedCard.
+ * Timer:
+ *   Starts the first time the user taps the card surface (idempotent).
+ *   Elapsed time (in decimal minutes, 1 d.p.) is passed to onSwipe so callers
+ *   can persist it to Google Sheets.  Time is NOT reported on skip (up-swipe)
+ *   because the card will return and time will be tracked when it is finally
+ *   acted on.
+ *
+ * Delegates face rendering to FlashCard, TaskCard, or WarmupCard.
  */
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
 
-import FlashCard     from './FlashCard.jsx';
-import OpenEndedCard from './OpenEndedCard.jsx';
-import TaskCard      from './TaskCard.jsx';
-import WarmupCard    from './WarmupCard.jsx';
+import FlashCard  from './FlashCard.jsx';
+import TaskCard   from './TaskCard.jsx';
+import WarmupCard from './WarmupCard.jsx';
 
 import {
   SWIPE_THRESHOLD_PX,
@@ -31,27 +37,66 @@ import '../../styles/cards.css';
 
 // ─── Label copy per card type ──────────────────────────────────────────────
 const LABELS = {
-  [CARD_TYPE.FLASHCARD]:  { right: 'Correct',  left: 'Incorrect', up: 'Again'  },
-  [CARD_TYPE.OPEN_ENDED]: { right: 'Done',      left: 'Later',     up: 'Again'  },
-  [CARD_TYPE.TASK]:       { right: 'Complete',  left: 'Defer',     up: 'Skip'   },
-  [CARD_TYPE.WARMUP]:     { right: 'Done',      left: 'Skip',      up: 'Skip'   },
+  [CARD_TYPE.FLASHCARD]: { right: 'Correct',  left: 'Incorrect', up: 'Again'  },
+  [CARD_TYPE.TASK]:      { right: 'Complete', left: 'Defer',     up: 'Skip'   },
+  [CARD_TYPE.WARMUP]:    { right: 'Done',     left: 'Skip',      up: 'Skip'   },
 };
 
+// ─── Timer helpers ─────────────────────────────────────────────────────────
+/** Format elapsed seconds as M:SS */
+function formatElapsed(totalSeconds) {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+/**
+ * Compute decimal minutes from a start timestamp.
+ * Returns a value rounded to 1 decimal place (e.g. 1.5 = 1m 30s).
+ * Returns 0 if the timer was never started.
+ */
+function computeMinutes(startTimeMs) {
+  if (!startTimeMs) return 0;
+  const seconds = Math.floor((Date.now() - startTimeMs) / 1000);
+  return Math.round(seconds / 6) / 10; // /6 = /60*10, then /10 = 1 d.p.
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
   const [gone, setGone] = useState(false);
 
   const { right: rightLabel, left: leftLabel, up: upLabel } =
     LABELS[question.type] ?? LABELS[CARD_TYPE.FLASHCARD];
 
-  // y is added to support upward fly-off
+  // ── Spring ──────────────────────────────────────────────────────────────
   const [{ x, y, rotate }, api] = useSpring(() => ({ x: 0, y: 0, rotate: 0 }));
 
-  // ── Indicator opacities ────────────────────────────────────────────────────
+  // ── Timer ────────────────────────────────────────────────────────────────
+  const [timerActive,   setTimerActive]   = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const startTimeRef  = useRef(null);  // ms timestamp of timer start
+  const intervalRef   = useRef(null);  // setInterval handle
+
+  /** Start the timer on first tap. Idempotent — safe to call multiple times. */
+  function startTimer() {
+    if (timerActive || gone) return;
+    setTimerActive(true);
+    startTimeRef.current = Date.now();
+    intervalRef.current = setInterval(
+      () => setElapsedSeconds(s => s + 1),
+      1000,
+    );
+  }
+
+  // Clear the interval when the card unmounts (post-swipe animation cleanup)
+  useEffect(() => () => clearInterval(intervalRef.current), []);
+
+  // ── Indicator opacities ──────────────────────────────────────────────────
   const rightOpacity = x.to(v => Math.min(Math.max( v / SWIPE_THRESHOLD_PX,    0), 1));
   const leftOpacity  = x.to(v => Math.min(Math.max(-v / SWIPE_THRESHOLD_PX,    0), 1));
   const upOpacity    = y.to(v => Math.min(Math.max(-v / SWIPE_UP_THRESHOLD_PX, 0), 1));
 
-  // Subtle green/red tint while dragging horizontally
+  // Subtle green/red tint on the card surface while dragging horizontally
   const surfaceBg = x.to(v => {
     const t = Math.min(Math.abs(v) / 400, 0.07);
     if (v >  10) return `linear-gradient(135deg, rgba(16,185,129,${t}) 0%, var(--color-surface) 100%)`;
@@ -59,6 +104,7 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
     return 'var(--color-surface)';
   });
 
+  // ── Drag gesture ─────────────────────────────────────────────────────────
   const bind = useDrag(
     ({ active, movement: [mx, my], velocity: [vx, vy] }) => {
       if (gone) return;
@@ -66,7 +112,7 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
       if (active) {
         api.start({
           x:         mx,
-          y:         Math.min(0, my),  // only follow finger upward, not downward
+          y:         Math.min(0, my), // only follow finger upward
           rotate:    mx / DRAG_ROTATION_DIV,
           immediate: true,
         });
@@ -76,7 +122,7 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
           (Math.min(0, my) < -SWIPE_UP_THRESHOLD_PX && Math.abs(my) >= Math.abs(mx)) ||
           (vy < -SWIPE_UP_VELOCITY && Math.abs(vy) >= Math.abs(vx));
 
-        // Horizontal gesture: existing left/right detection
+        // Horizontal swipe
         const isHorizontal =
           Math.abs(mx) > SWIPE_THRESHOLD_PX || Math.abs(vx) > SWIPE_VELOCITY;
 
@@ -87,7 +133,10 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
             x:      0,
             rotate: 0,
             config: { tension: 300, friction: 22 },
-            onRest: () => onSkip(question.id),
+            onRest: () => {
+              clearInterval(intervalRef.current);
+              onSkip(question.id);
+            },
           });
         } else if (isHorizontal) {
           const dir = mx > 0 ? 'right' : 'left';
@@ -97,7 +146,11 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
             y:      0,
             rotate: dir === 'right' ? FLY_ROTATION_DEG : -FLY_ROTATION_DEG,
             config: { tension: 300, friction: 22 },
-            onRest: () => onSwipe(question.id, dir, question.type),
+            onRest: () => {
+              clearInterval(intervalRef.current);
+              // Pass elapsed minutes so callers can persist to Sheets
+              onSwipe(question.id, dir, question.type, computeMinutes(startTimeRef.current));
+            },
           });
         } else {
           // Snap back to rest
@@ -123,15 +176,18 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle }) {
       {/* Up drag indicator */}
       <animated.div className="skip-label" style={{ opacity: upOpacity }}>{upLabel}</animated.div>
 
-      {/* Card surface */}
-      <animated.div className="deck-card-surface" style={{ background: surfaceBg }}>
+      {/* Timer badge — tapping the card surface starts it */}
+      <div className={`card-timer-badge${timerActive ? ' card-timer-badge--active' : ''}`}>
+        {timerActive ? formatElapsed(elapsedSeconds) : '⏱'}
+      </div>
+
+      {/* Card surface — onClick starts the timer on first tap */}
+      <animated.div className="deck-card-surface" style={{ background: surfaceBg }} onClick={startTimer}>
         {question.type === CARD_TYPE.FLASHCARD
-          ? <FlashCard question={question} />
+          ? <FlashCard  question={question} />
           : question.type === CARD_TYPE.TASK
-            ? <TaskCard question={question} />
-            : question.type === CARD_TYPE.WARMUP
-              ? <WarmupCard question={question} />
-              : <OpenEndedCard question={question} />
+            ? <TaskCard   question={question} />
+            : <WarmupCard question={question} />
         }
       </animated.div>
     </animated.div>

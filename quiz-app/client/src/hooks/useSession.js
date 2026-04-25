@@ -1,6 +1,7 @@
 /**
  * useSession — tracks swipe results for the current study session.
  *
+ * Only flashcard results are tracked (correct / incorrect).
  * Persists to localStorage so progress survives a page refresh.
  * Call resetSession() to clear and start fresh.
  */
@@ -8,7 +9,7 @@ import { useState, useCallback } from 'react';
 import { SESSION_STORAGE_KEY } from '../config.js';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-const EMPTY_SESSION = () => ({ correct: [], incorrect: [], completed: [], deferred: [] });
+const EMPTY_SESSION = () => ({ correct: [], incorrect: [] });
 
 function loadSession() {
   try {
@@ -28,21 +29,14 @@ export function useSession() {
   const [session, setSession] = useState(loadSession);
 
   /**
-   * Record a swipe result for a card.
-   * @param {string} id        - question id
-   * @param {'left'|'right'} direction
-   * @param {'flashcard'|'open-ended'} type
+   * Record a swipe result for a flashcard.
+   * @param {string}          id        - question id
+   * @param {'left'|'right'}  direction - right = correct, left = incorrect
    */
-  const recordSwipe = useCallback((id, direction, type) => {
+  const recordSwipe = useCallback((id, direction) => {
     setSession(prev => {
-      const next = { ...prev };
-
-      if (type === 'flashcard') {
-        next[direction === 'right' ? 'correct' : 'incorrect'] = [...prev[direction === 'right' ? 'correct' : 'incorrect'], id];
-      } else {
-        next[direction === 'right' ? 'completed' : 'deferred'] = [...prev[direction === 'right' ? 'completed' : 'deferred'], id];
-      }
-
+      const key  = direction === 'right' ? 'correct' : 'incorrect';
+      const next = { ...prev, [key]: [...prev[key], id] };
       persistSession(next);
       return next;
     });
@@ -58,8 +52,6 @@ export function useSession() {
   const sessionStats = {
     correct:   session.correct.length,
     incorrect: session.incorrect.length,
-    completed: session.completed.length,
-    deferred:  session.deferred.length,
   };
 
   return { session, recordSwipe, resetSession, sessionStats };

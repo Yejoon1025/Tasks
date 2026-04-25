@@ -1,10 +1,6 @@
-id,type,front,back,deck
-1,flashcard,What is the capital of France?,Paris,Geography
-2,flashcard,What does HTTP stand for?,HyperText Transfer Protocol,CS
-3,flashcard,What is the powerhouse of the cell?,Mitochondria,Biology
-4,flashcard,What year did World War II end?,1945,History
-5,flashcard,What is the time complexity of binary search?,O(log n),CS
-6,open-ended,What are your top 3 goals this week?,,Weekly Review
-7,open-ended,What is one thing you learned today and how will you apply it?,,Reflection
-8,open-ended,Explain recursion in your own words.,,CS Concepts
-9,open-ended,What is one habit you want to build this month and why?,,Goals
+id,type,front,back,deck,time_spent_min
+1,flashcard,What is the capital of France?,Paris,Geography,0
+2,flashcard,What does HTTP stand for?,HyperText Transfer Protocol,CS,0
+3,flashcard,What is the powerhouse of the cell?,Mitochondria,Biology,0
+4,flashcard,What year did World War II end?,1945,History,0
+5,flashcard,What is the time complexity of binary search?,O(log n),CS,0
