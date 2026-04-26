@@ -16,10 +16,13 @@ export default function FlashCard({ question }) {
 
   const hasBack = question.back && question.back.trim() !== '';
 
-  function handleTap() {
-    if (!hasBack) return;            // nothing to flip to
+  function handleTap(e) {
+    // Let the tap bubble up to DeckCard's surface handler (timer toggle).
+    // Only intercept double-taps when there's a back face to show.
+    if (!hasBack) return;
     const now = Date.now();
     if (now - lastTapRef.current < DOUBLE_TAP_MS) {
+      e.stopPropagation();           // don't let the flip also trigger a timer toggle
       setFlipped(f => !f);
       lastTapRef.current = 0;        // reset so a third tap doesn't flip again
     } else {

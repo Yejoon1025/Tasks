@@ -130,7 +130,7 @@ export default function TaskStack({ tasks, onReset }) {
             question={task}
             onSwipe={handleSwipe}
             onSkip={handleSkip}
-            skipDisabled={isDueToday(task)}
+            deferDisabled={isDueToday(task)}
             stackStyle={{
               transform:     `scale(${scale}) translateY(${translateY}px)`,
               zIndex:        index,

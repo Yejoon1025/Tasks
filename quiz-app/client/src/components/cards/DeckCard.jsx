@@ -3,15 +3,17 @@
  *
  * Gestures:
  *   Left / Right → record result, card flies off horizontally
+ *                  If deferDisabled=true a left swipe snaps back instead.
  *   Up           → re-queue card (moves to end of deck), card flies off upward
- *                  If skipDisabled=true the card snaps back instead of flying off.
  *
  * Timer:
- *   Starts the first time the user taps the card surface (idle → running).
- *   Tap the timer badge while running to pause; tap again to resume (paused → running).
- *   Elapsed time (in decimal minutes, 1 d.p.) is passed to onSwipe / onSkip so callers
- *   can persist it.  Time is tracked even on skip (the card will return and time will
- *   continue accumulating).
+ *   Tap anywhere on the card surface to cycle through states:
+ *     idle → running  (first tap starts the clock)
+ *     running → paused (tap while running pauses it)
+ *     paused → running (tap while paused resumes it)
+ *   The timer badge is pointer-events:none — all taps go to the card surface.
+ *   Elapsed time (decimal minutes, 1 d.p.) is passed to onSwipe / onSkip so
+ *   callers can persist it.  Time accumulates across pause windows.
  *
  * Delegates face rendering to FlashCard, TaskCard, or WarmupCard.
  */
@@ -53,7 +55,7 @@ function formatElapsed(totalSeconds) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-export default function DeckCard({ question, onSwipe, onSkip, stackStyle, skipDisabled = false }) {
+export default function DeckCard({ question, onSwipe, onSkip, stackStyle, deferDisabled = false }) {
   const [gone, setGone] = useState(false);
 
   const { right: rightLabel, left: leftLabel, up: upLabel } =
@@ -69,7 +71,7 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle, skipDi
   const accumulatedRef = useRef(0);      // ms from all completed running windows
   const intervalRef    = useRef(null);
 
-  /** Start interval that updates display every second. */
+  /** Start interval that updates the display every second. */
   function startTick() {
     clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
@@ -79,28 +81,22 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle, skipDi
     }, 1000);
   }
 
-  /** First tap on card surface: idle → running. Idempotent. */
-  function startTimer() {
-    if (timerState !== 'idle' || gone) return;
-    startTimeRef.current = Date.now();
-    setTimerState('running');
-    startTick();
-  }
-
   /**
-   * Tap on timer badge: toggle running ↔ paused.
-   * Stops propagation so the card surface onClick doesn't also fire.
+   * Tap anywhere on the card surface to cycle timer states:
+   *   idle → running → paused → running → …
    */
-  function toggleTimer(e) {
-    e.stopPropagation();
-    if (timerState === 'running') {
-      // Pause: bank elapsed ms, stop interval
+  function handleCardTap() {
+    if (gone) return;
+    if (timerState === 'idle') {
+      startTimeRef.current = Date.now();
+      setTimerState('running');
+      startTick();
+    } else if (timerState === 'running') {
       accumulatedRef.current += Date.now() - startTimeRef.current;
       startTimeRef.current = null;
       clearInterval(intervalRef.current);
       setTimerState('paused');
     } else if (timerState === 'paused') {
-      // Resume: start a new running window
       startTimeRef.current = Date.now();
       setTimerState('running');
       startTick();
@@ -154,11 +150,6 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle, skipDi
           Math.abs(mx) > SWIPE_THRESHOLD_PX || Math.abs(vx) > SWIPE_VELOCITY;
 
         if (isUp) {
-          if (skipDisabled) {
-            // Due-today tasks can't be skipped — snap back with a bounce
-            api.start({ x: 0, y: 0, rotate: 0, config: { tension: 460, friction: 32 } });
-            return;
-          }
           setGone(true);
           api.start({
             y:      -FLY_DISTANCE_PX,
@@ -172,6 +163,13 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle, skipDi
           });
         } else if (isHorizontal) {
           const dir = mx > 0 ? 'right' : 'left';
+
+          // Due-today tasks can't be deferred — snap back on left swipe
+          if (deferDisabled && dir === 'left') {
+            api.start({ x: 0, y: 0, rotate: 0, config: { tension: 460, friction: 32 } });
+            return;
+          }
+
           setGone(true);
           api.start({
             x:      dir === 'right' ? FLY_DISTANCE_PX : -FLY_DISTANCE_PX,
@@ -218,16 +216,13 @@ export default function DeckCard({ question, onSwipe, onSkip, stackStyle, skipDi
       {/* Up drag indicator */}
       <animated.div className="skip-label" style={{ opacity: upOpacity }}>{upLabel}</animated.div>
 
-      {/* Timer badge — idle: tap card surface to start; running/paused: tap badge to toggle */}
-      <div
-        className={`card-timer-badge${timerCls}`}
-        onClick={timerState !== 'idle' ? toggleTimer : undefined}
-      >
+      {/* Timer badge — display only, pointer-events:none so taps reach the card surface */}
+      <div className={`card-timer-badge${timerCls}`}>
         {timerContent}
       </div>
 
-      {/* Card surface — first tap starts the timer */}
-      <animated.div className="deck-card-surface" style={{ background: surfaceBg }} onClick={startTimer}>
+      {/* Card surface — tap to cycle timer (idle→running→paused→running) */}
+      <animated.div className="deck-card-surface" style={{ background: surfaceBg }} onClick={handleCardTap}>
         {question.type === CARD_TYPE.TASK
           ? <TaskCard   question={question} />
           : question.type === CARD_TYPE.WARMUP

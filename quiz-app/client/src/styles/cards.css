@@ -255,7 +255,7 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.03em;
   color: var(--color-text-3);
-  pointer-events: none;   /* idle: pass taps through; active/paused override this */
+  pointer-events: none;   /* display only — taps always pass through to the card surface */
   transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
@@ -264,8 +264,6 @@
   color: var(--color-green);
   border-color: rgba(16, 185, 129, 0.3);
   background: var(--color-green-dim);
-  cursor: pointer;
-  pointer-events: auto;
 }
 
 /* Paused state — timer is paused */
@@ -273,6 +271,4 @@
   color: var(--color-amber);
   border-color: rgba(245, 158, 11, 0.3);
   background: var(--color-amber-dim);
-  cursor: pointer;
-  pointer-events: auto;
 }
