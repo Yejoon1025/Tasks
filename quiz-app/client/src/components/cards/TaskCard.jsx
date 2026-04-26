@@ -34,16 +34,16 @@ export default function TaskCard({ question: task }) {
 
         {/* ── Top row: project badge + due date ───────────────────────────── */}
         <div className="tc-toprow">
-          <span className="card-badge badge-project">{task.project || 'Task'}</span>
+          <span className="card-badge badge-project">{task.type || 'Task'}</span>
           {due && <span className={`tc-due ${due.cls}`}>{due.label}</span>}
         </div>
 
         {/* ── Title ────────────────────────────────────────────────────────── */}
-        <p className="tc-title">{task.title}</p>
+        <p className="tc-title">{task.front}</p>
 
         {/* ── Description ──────────────────────────────────────────────────── */}
-        {task.description && (
-          <p className="tc-desc">{task.description}</p>
+        {task.back && (
+          <p className="tc-desc">{task.back}</p>
         )}
 
         {/* ── Footer: drag hint ─────────────────────────────────────────────── */}

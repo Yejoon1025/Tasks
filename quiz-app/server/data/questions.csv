@@ -1,4 +1,4 @@
-id,front,back,deck,time_spent_min,result
+id,front,back,type,time_spent_min,result
 1,What is the capital of France?,Paris,Geography,0,
 2,What does HTTP stand for?,HyperText Transfer Protocol,CS,0,
 3,What is the powerhouse of the cell?,Mitochondria,Biology,0,

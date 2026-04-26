@@ -36,7 +36,7 @@ export default function FlashCard({ question }) {
 
         {/* ── Front face ─────────────────────────────────────────────────── */}
         <div className="card-face card-front">
-          <span className="card-badge badge-deck">{question.deck || 'Card'}</span>
+          <span className="card-badge badge-deck">{question.type || 'Card'}</span>
           <p className="card-body">{question.front}</p>
           {hasBack && (
             <span className="card-hint">

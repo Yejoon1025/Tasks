@@ -96,14 +96,14 @@ app.get('/api/questions', async (req, res) => {
 
 // ── POST /api/questions ────────────────────────────────────────────────────────
 // Append a new flashcard row to the Questions sheet (or CSV fallback).
-// Questions sheet columns: A=id  B=front  C=back  D=deck  E=time_spent_min  F=result
+// Questions sheet columns: A=id  B=front  C=back  D=type  E=time_spent_min  F=result
 app.post('/api/questions', async (req, res) => {
-  const { front, back, deck } = req.body;
-  if (!front || !deck)
-    return res.status(400).json({ error: 'front and deck are required.' });
+  const { front, back, type } = req.body;
+  if (!front || !type)
+    return res.status(400).json({ error: 'front and type are required.' });
 
   const id  = Date.now();
-  const row = [id, String(front), String(back ?? ''), String(deck), 0, ''];
+  const row = [id, String(front), String(back ?? ''), String(type), 0, ''];
 
   if (!isSheetsConfigured()) {
     // CSV fallback — append a line to questions.csv
@@ -124,14 +124,14 @@ app.post('/api/questions', async (req, res) => {
 
 // ── POST /api/tasks ───────────────────────────────────────────────────────────
 // Append a new task row to the Tasks sheet (or CSV fallback).
-// Tasks sheet columns: A=id  B=title  C=description  D=project  E=due_date  F=time_spent_min  G=result
+// Tasks sheet columns: A=id  B=front  C=back  D=type  E=due_date  F=time_spent_min  G=result
 app.post('/api/tasks', async (req, res) => {
-  const { title, description, project, due_date } = req.body;
-  if (!title)
-    return res.status(400).json({ error: 'title is required.' });
+  const { front, back, type, due_date } = req.body;
+  if (!front)
+    return res.status(400).json({ error: 'front is required.' });
 
   const id  = Date.now();
-  const row = [id, String(title), String(description ?? ''), String(project ?? ''), String(due_date ?? ''), 0, ''];
+  const row = [id, String(front), String(back ?? ''), String(type ?? ''), String(due_date ?? ''), 0, ''];
 
   if (!isSheetsConfigured()) {
     const line = row.map(csvField).join(',') + '\n';
@@ -164,15 +164,15 @@ app.get('/api/schedule', async (req, res) => {
 
 // ── POST /api/schedule ────────────────────────────────────────────────────────
 // Append a new schedule event to the Schedule sheet (or CSV fallback).
-// Schedule sheet columns: A=id  B=time  C=title  D=duration_min  E=category  F=date
+// Schedule sheet columns: A=id  B=time  C=front  D=duration_min  E=type  F=date
 app.post('/api/schedule', async (req, res) => {
-  const { time, title, duration_min, category, date } = req.body;
-  if (!time || !title)
-    return res.status(400).json({ error: 'time and title are required.' });
+  const { time, front, duration_min, type, date } = req.body;
+  if (!time || !front)
+    return res.status(400).json({ error: 'time and front are required.' });
 
   const id  = Date.now();
   // date is optional — empty string means the event recurs every day
-  const row = [id, String(time), String(title), Number(duration_min) || 30, String(category ?? ''), String(date ?? '')];
+  const row = [id, String(time), String(front), Number(duration_min) || 30, String(type ?? ''), String(date ?? '')];
 
   if (!isSheetsConfigured()) {
     const line = row.map(csvField).join(',') + '\n';

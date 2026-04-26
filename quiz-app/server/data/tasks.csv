@@ -1,4 +1,4 @@
-id,title,description,project,due_date,time_spent_min,result
+id,front,back,type,due_date,time_spent_min,result
 1,Refactor auth module,Extract token logic into its own service and add unit tests,Backend,2026-04-23,0,
 2,Design onboarding screens,Create high-fidelity mockups for the 3-step onboarding flow,Design,2026-04-24,0,
 3,Write weekly status update,Summarise sprint progress and blockers for the team channel,Comms,2026-04-22,0,

@@ -36,10 +36,10 @@ export default function SchedulePanel({ schedule, current }) {
               className={`sp-item${isCurrent ? ' sp-item--current' : isPast ? ' sp-item--past' : ''}`}
             >
               <span className="sp-time">{fmtTime(activity.startDate)}</span>
-              <span className="sp-title">{activity.title}</span>
+              <span className="sp-title">{activity.front}</span>
               <span className="sp-meta">
                 <span className="sp-duration">{fmtDuration(activity.duration_min)}</span>
-                <span className="sp-category">{activity.category}</span>
+                <span className="sp-category">{activity.type}</span>
               </span>
             </li>
           );

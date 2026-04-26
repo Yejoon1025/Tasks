@@ -8,6 +8,11 @@
  *       type='question' → item is the new question object
  *       type='task'     → item is the new task object
  *       type='schedule' → item is null (caller should re-fetch via refreshSchedule)
+ *
+ * All sheets now share the same column names: front, back, type.
+ *   front = question / task title / schedule title
+ *   back  = answer / task description  (questions and tasks only)
+ *   type  = deck / project / category
  */
 import { useState } from 'react';
 import { API_BASE } from '../api.js';
@@ -22,19 +27,19 @@ export default function AddPanel({ defaultTab = 'question', onClose, onAdded }) 
   // ── Question (flashcard) state ───────────────────────────────────────────
   const [qFront, setQFront] = useState('');
   const [qBack,  setQBack]  = useState('');
-  const [qDeck,  setQDeck]  = useState('');
+  const [qType,  setQType]  = useState('');   // deck name
 
   // ── Task state ───────────────────────────────────────────────────────────
-  const [tTitle, setTTitle] = useState('');
-  const [tDesc,  setTDesc]  = useState('');
-  const [tProj,  setTProj]  = useState('');
+  const [tFront, setTFront] = useState('');   // title
+  const [tBack,  setTBack]  = useState('');   // description
+  const [tType,  setTType]  = useState('');   // project
   const [tDue,   setTDue]   = useState('');
 
   // ── Schedule state ───────────────────────────────────────────────────────
   const [sTime,  setSTime]  = useState('');
-  const [sTitle, setSTitle] = useState('');
+  const [sFront, setSFront] = useState('');   // activity name
   const [sDur,   setSDur]   = useState('');
-  const [sCat,   setSCat]   = useState('');
+  const [sType,  setSType]  = useState('');   // category
   // Default to today; leave blank = recurring daily
   const [sDate,  setSDate]  = useState(() => {
     const d = new Date();
@@ -58,13 +63,13 @@ export default function AddPanel({ defaultTab = 'question', onClose, onAdded }) 
 
       if (tab === 'question') {
         url  = `${API_BASE}/api/questions`;
-        body = { front: qFront.trim(), back: qBack.trim(), deck: qDeck.trim() };
+        body = { front: qFront.trim(), back: qBack.trim(), type: qType.trim() };
       } else if (tab === 'task') {
         url  = `${API_BASE}/api/tasks`;
-        body = { title: tTitle.trim(), description: tDesc.trim(), project: tProj.trim(), due_date: tDue };
+        body = { front: tFront.trim(), back: tBack.trim(), type: tType.trim(), due_date: tDue };
       } else {
         url  = `${API_BASE}/api/schedule`;
-        body = { time: sTime, title: sTitle.trim(), duration_min: Number(sDur) || 30, category: sCat.trim(), date: sDate };
+        body = { time: sTime, front: sFront.trim(), duration_min: Number(sDur) || 30, type: sType.trim(), date: sDate };
       }
 
       const res = await fetch(url, {
@@ -83,9 +88,9 @@ export default function AddPanel({ defaultTab = 'question', onClose, onAdded }) 
       // Build a local object for immediate in-app update
       let newItem = null;
       if (tab === 'question') {
-        newItem = { id: String(id), front: qFront.trim(), back: qBack.trim(), deck: qDeck.trim(), time_spent_min: 0 };
+        newItem = { id: String(id), front: qFront.trim(), back: qBack.trim(), type: qType.trim(), time_spent_min: 0 };
       } else if (tab === 'task') {
-        newItem = { id: String(id), title: tTitle.trim(), description: tDesc.trim(), project: tProj.trim(), due_date: tDue, time_spent_min: 0 };
+        newItem = { id: String(id), front: tFront.trim(), back: tBack.trim(), type: tType.trim(), due_date: tDue, time_spent_min: 0 };
       }
       // schedule: caller re-fetches via refresh()
 
@@ -138,7 +143,7 @@ export default function AddPanel({ defaultTab = 'question', onClose, onAdded }) 
               </div>
               <div className="add-field">
                 <label>Deck</label>
-                <input value={qDeck} onChange={e => setQDeck(e.target.value)}
+                <input value={qType} onChange={e => setQType(e.target.value)}
                   placeholder="e.g. Biology" required />
               </div>
             </>
@@ -149,17 +154,17 @@ export default function AddPanel({ defaultTab = 'question', onClose, onAdded }) 
             <>
               <div className="add-field">
                 <label>Title</label>
-                <input value={tTitle} onChange={e => setTTitle(e.target.value)}
+                <input value={tFront} onChange={e => setTFront(e.target.value)}
                   placeholder="Task title…" required />
               </div>
               <div className="add-field">
                 <label>Description</label>
-                <textarea value={tDesc} onChange={e => setTDesc(e.target.value)}
+                <textarea value={tBack} onChange={e => setTBack(e.target.value)}
                   placeholder="Optional details…" />
               </div>
               <div className="add-field">
                 <label>Project</label>
-                <input value={tProj} onChange={e => setTProj(e.target.value)}
+                <input value={tType} onChange={e => setTType(e.target.value)}
                   placeholder="e.g. Work" />
               </div>
               <div className="add-field">
@@ -181,8 +186,8 @@ export default function AddPanel({ defaultTab = 'question', onClose, onAdded }) 
                 <input type="time" value={sTime} onChange={e => setSTime(e.target.value)} required />
               </div>
               <div className="add-field">
-                <label>Title</label>
-                <input value={sTitle} onChange={e => setSTitle(e.target.value)}
+                <label>Activity</label>
+                <input value={sFront} onChange={e => setSFront(e.target.value)}
                   placeholder="Activity name…" required />
               </div>
               <div className="add-field">
@@ -192,7 +197,7 @@ export default function AddPanel({ defaultTab = 'question', onClose, onAdded }) 
               </div>
               <div className="add-field">
                 <label>Category</label>
-                <input value={sCat} onChange={e => setSCat(e.target.value)}
+                <input value={sType} onChange={e => setSType(e.target.value)}
                   placeholder="e.g. Focus" />
               </div>
             </>

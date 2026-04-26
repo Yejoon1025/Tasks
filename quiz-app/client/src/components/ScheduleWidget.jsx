@@ -60,11 +60,11 @@ export default function ScheduleWidget({ current, next, progress, expanded, onTo
           {/* Time + title */}
           <div className="sw-body">
             <span className="sw-time">{fmtTime((current ?? next).startDate)}</span>
-            <span className="sw-title">{(current ?? next).title}</span>
+            <span className="sw-title">{(current ?? next).front}</span>
           </div>
 
-          {/* Category pill */}
-          <span className="sw-category">{(current ?? next).category}</span>
+          {/* Type pill */}
+          <span className="sw-category">{(current ?? next).type}</span>
 
           {/* Expand/collapse chevron */}
           <Chevron expanded={expanded} />

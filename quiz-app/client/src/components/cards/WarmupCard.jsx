@@ -10,9 +10,9 @@ export default function WarmupCard({ question: task }) {
     <div className="wc-wrapper">
       <div className="card-face card-front wc-front">
         <span className="card-badge wc-badge">Warm-Up</span>
-        <p className="wc-title">{task.title}</p>
-        {task.description && (
-          <p className="wc-desc">{task.description}</p>
+        <p className="wc-title">{task.front}</p>
+        {task.back && (
+          <p className="wc-desc">{task.back}</p>
         )}
         <span className="card-hint">
           <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
