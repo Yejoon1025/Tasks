@@ -1,16 +1,22 @@
 /**
  * TaskStack — deck manager for the Tasks view.
  *
- * On load, tasks already marked 'completed' are excluded from the deck so they
- * don't re-appear.  Deferred tasks are included and can be acted on again.
+ * On load, tasks already marked 'completed' or 'deferred' are excluded from
+ * the deck so they don't re-appear after a page refresh.
  *
  * Timer state is preserved across skips via _elapsedMs on each card object.
  * On load, _elapsedMs is seeded from the server's time_spent_min so the timer
  * shows cumulative work time even across devices.
  *
  * Tasks due today cannot be deferred (left swipe snaps back); skip is always allowed.
+ *
+ * When the `tasks` prop changes (e.g. after a triple-click refresh), new tasks
+ * are prepended to the deck without disturbing the current card.
+ *
+ * PATCH requests use _sheetRow (1-based physical sheet row) as the identifier
+ * — no id column needed.
  */
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import DeckCard from './cards/DeckCard.jsx';
 
@@ -35,25 +41,43 @@ function isDueToday(task) {
 export default function TaskStack({ tasks }) {
   const [deck, setDeck] = useState(() =>
     tasks
-      // Any task already acted on (completed or deferred) is excluded on reload
       .filter(t => !t.result)
       .map(t => ({
         ...t,
         type:       CARD_TYPE.TASK,
         _version:   0,
-        // Seed timer display from server-stored time so badge shows cumulative work
         _elapsedMs: Math.round((parseFloat(t.time_spent_min) || 0) * 60 * 1000),
       }))
   );
   const [currentIndex, setCurrentIndex] = useState(deck.length - 1);
 
+  const deckRef = useRef(deck);
+  deckRef.current = deck;
+
+  // ── Deck reactivity ────────────────────────────────────────────────────────
+  useEffect(() => {
+    const existingRows = new Set(deckRef.current.map(c => c._sheetRow));
+    const newCards = tasks
+      .filter(t => !t.result && !existingRows.has(t._sheetRow))
+      .map(t => ({
+        ...t,
+        type:       CARD_TYPE.TASK,
+        _version:   0,
+        _elapsedMs: Math.round((parseFloat(t.time_spent_min) || 0) * 60 * 1000),
+      }));
+
+    if (newCards.length === 0) return;
+
+    setDeck(prev => [...newCards, ...prev]);
+    setCurrentIndex(ci => ci + newCards.length);
+  }, [tasks]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Swipe left / right ─────────────────────────────────────────────────────
-  function handleSwipe(id, direction, _type, elapsedMinutes) {
+  function handleSwipe(row, direction, _type, elapsedMinutes) {
     const result = direction === 'right' ? 'completed' : 'deferred';
     setCurrentIndex(i => i - 1);
 
-    // Persist result + incremental time to the task row
-    fetch(`${API_BASE}/api/tasks/${id}`, {
+    fetch(`${API_BASE}/api/tasks/${row}`, {
       method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ result, time_spent_min: elapsedMinutes }),
@@ -61,7 +85,7 @@ export default function TaskStack({ tasks }) {
   }
 
   // ── Swipe up: re-queue ─────────────────────────────────────────────────────
-  function handleSkip(id, elapsedMinutes) {
+  function handleSkip(row, elapsedMinutes) {
     setDeck(prev => {
       const card = prev[currentIndex];
       if (!card) return prev;
@@ -71,7 +95,7 @@ export default function TaskStack({ tasks }) {
     });
 
     if (elapsedMinutes > 0) {
-      fetch(`${API_BASE}/api/tasks/${id}`, {
+      fetch(`${API_BASE}/api/tasks/${row}`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ time_spent_min: elapsedMinutes }),
@@ -103,7 +127,7 @@ export default function TaskStack({ tasks }) {
 
         return (
           <DeckCard
-            key={`${task.id}-${task._version}`}
+            key={`${task._sheetRow}-${task._version}`}
             question={task}
             initialMs={task._elapsedMs ?? 0}
             onSwipe={handleSwipe}

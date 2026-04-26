@@ -162,7 +162,7 @@ export default function DeckCard({
             config: { tension: 300, friction: 22 },
             onRest: () => {
               clearInterval(intervalRef.current);
-              onSkip(question.id, computeMinutes());
+              onSkip(question._sheetRow, computeMinutes());
             },
           });
         } else if (isHorizontal) {
@@ -181,7 +181,7 @@ export default function DeckCard({
             config: { tension: 300, friction: 22 },
             onRest: () => {
               clearInterval(intervalRef.current);
-              onSwipe(question.id, dir, question.type, computeMinutes());
+              onSwipe(question._sheetRow, dir, question.type, computeMinutes());
             },
           });
         } else {

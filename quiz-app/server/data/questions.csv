@@ -1,6 +1,6 @@
-id,front,back,type,time_spent_min,result
-1,What is the capital of France?,Paris,Geography,0,
-2,What does HTTP stand for?,HyperText Transfer Protocol,CS,0,
-3,What is the powerhouse of the cell?,Mitochondria,Biology,0,
-4,What year did World War II end?,1945,History,0,
-5,What is the time complexity of binary search?,O(log n),CS,0,
+front,back,type,time_spent_min,result
+What is the capital of France?,Paris,Geography,0,
+What does HTTP stand for?,HyperText Transfer Protocol,CS,0,
+What is the powerhouse of the cell?,Mitochondria,Biology,0,
+What year did World War II end?,1945,History,0,
+What is the time complexity of binary search?,O(log n),CS,0,

@@ -83,18 +83,9 @@ export default function AddPanel({ defaultTab = 'question', onClose, onAdded }) 
         throw new Error(data.error || `HTTP ${res.status}`);
       }
 
-      const { id } = await res.json();
-
-      // Build a local object for immediate in-app update
-      let newItem = null;
-      if (tab === 'question') {
-        newItem = { id: String(id), front: qFront.trim(), back: qBack.trim(), type: qType.trim(), time_spent_min: 0 };
-      } else if (tab === 'task') {
-        newItem = { id: String(id), front: tFront.trim(), back: tBack.trim(), type: tType.trim(), due_date: tDue, time_spent_min: 0 };
-      }
-      // schedule: caller re-fetches via refresh()
-
-      onAdded?.(tab, newItem);
+      // Re-fetch so the new card arrives with a proper _sheetRow from the server.
+      // CardStack/TaskStack will pick it up via their prop-change useEffect.
+      onAdded?.(tab);
       onClose?.();
     } catch (err) {
       setError(err.message);

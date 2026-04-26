@@ -27,12 +27,12 @@ export default function SchedulePanel({ schedule, current }) {
       <ul className="sp-list">
         {schedule.map(activity => {
           const endMs   = activity.startDate.getTime() + activity.duration_min * 60_000;
-          const isCurrent = activity.id === current?.id;
+          const isCurrent = activity._sheetRow === current?._sheetRow;
           const isPast    = !isCurrent && endMs < now.getTime();
 
           return (
             <li
-              key={activity.id}
+              key={activity._sheetRow}
               className={`sp-item${isCurrent ? ' sp-item--current' : isPast ? ' sp-item--past' : ''}`}
             >
               <span className="sp-time">{fmtTime(activity.startDate)}</span>

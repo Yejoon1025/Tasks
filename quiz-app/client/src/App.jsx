@@ -14,8 +14,9 @@
  *
  * The schedule widget sits above both decks and is always visible.
  *
- * Cross-device sync: questions and tasks are re-fetched whenever the page
- * becomes visible (Page Visibility API) and on a 5-minute background poll.
+ * Refresh: triple-click the card count in the header to re-fetch questions and
+ * tasks from the server. New cards are merged into the running deck without
+ * disturbing the current card.
  */
 import { useState, useEffect, useRef } from 'react';
 import { useDrag } from '@use-gesture/react';
@@ -26,8 +27,7 @@ import WarmupGate       from './components/WarmupGate.jsx';
 import ScheduleWidget   from './components/ScheduleWidget.jsx';
 import SchedulePanel    from './components/SchedulePanel.jsx';
 import AddPanel         from './components/AddPanel.jsx';
-import { useSchedule }         from './hooks/useSchedule.js';
-import { useVisibilityRefresh } from './hooks/useVisibilityRefresh.js';
+import { useSchedule }  from './hooks/useSchedule.js';
 import { WARMUP_CLEARED_PREFIX } from './config.js';
 import { API_BASE } from './api.js';
 
@@ -129,9 +129,9 @@ export default function App() {
       .catch(() => {});
   }, []);
 
-  // ── Cross-device sync: visibility + 5-min poll ────────────────────────────
-  // refreshRef lets the effect/listener always call the latest version without
-  // needing to re-register on every render.
+  // ── Manual refresh (triple-click the count label) ──────────────────────────
+  // refreshRef lets event handlers always call the latest version without
+  // needing to close over stale state.
   const refreshRef = useRef(null);
   refreshRef.current = function refreshMainData() {
     fetch(`${API_BASE}/api/questions`)
@@ -140,18 +140,29 @@ export default function App() {
       .then(r => r.json()).then(setTasks).catch(() => {});
   };
 
-  useVisibilityRefresh(() => refreshRef.current?.());
-
-  useEffect(() => {
-    const id = setInterval(() => refreshRef.current?.(), 5 * 60_000);
-    return () => clearInterval(id);
-  }, []);
+  // Triple-click detection on the count label
+  const tripleClickRef = useRef({ count: 0, timer: null });
+  function handleCountClick() {
+    tripleClickRef.current.count += 1;
+    clearTimeout(tripleClickRef.current.timer);
+    tripleClickRef.current.timer = setTimeout(() => {
+      tripleClickRef.current.count = 0;
+    }, 600);
+    if (tripleClickRef.current.count >= 3) {
+      tripleClickRef.current.count = 0;
+      refreshRef.current?.();
+    }
+  }
 
   // ── Handlers ───────────────────────────────────────────────────────────────
-  function handleAdded(type, item) {
-    if (type === 'question') setQuestions(prev => [...prev, item]);
-    if (type === 'task')     setTasks(prev => [...prev, item]);
-    if (type === 'schedule') refreshSchedule();
+  // After adding any card/task, re-fetch from the server so new items arrive
+  // with proper _sheetRow values and flow through CardStack/TaskStack's reactivity.
+  function handleAdded(type) {
+    if (type === 'schedule') {
+      refreshSchedule();
+    } else {
+      refreshRef.current?.();
+    }
   }
 
   // ── Gate: waiting for warmup check ────────────────────────────────────────
@@ -221,7 +232,8 @@ export default function App() {
             Tasks
           </button>
         </div>
-        <span className="app-count">{countLabel}</span>
+        {/* Triple-click to refresh data from the server */}
+        <span className="app-count" onClick={handleCountClick}>{countLabel}</span>
         <button
           className="add-btn"
           onClick={() => setAddOpen(true)}

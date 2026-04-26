@@ -37,8 +37,8 @@ export default function WarmupGate({ tasks, onComplete }) {
    * Mark a task as done on the server (fire-and-forget).
    * Sends the client's local date so the server stores the correct timezone value.
    */
-  function markDone(id) {
-    fetch(`${API_BASE}/api/warmup/${id}`, {
+  function markDone(row) {
+    fetch(`${API_BASE}/api/warmup/${row}`, {
       method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ date: todayStr() }),
@@ -46,8 +46,8 @@ export default function WarmupGate({ tasks, onComplete }) {
   }
 
   /** Left / right swipe — both directions count as done for warmup. */
-  function handleSwipe(id) {
-    markDone(id);
+  function handleSwipe(row) {
+    markDone(row);
     const next = currentIndex - 1;
     if (next < 0) {
       setDone(true);
@@ -57,8 +57,8 @@ export default function WarmupGate({ tasks, onComplete }) {
   }
 
   /** Up swipe — also counts as done for warmup (no re-queue needed). */
-  function handleSkip(id) {
-    markDone(id);
+  function handleSkip(row) {
+    markDone(row);
     const next = currentIndex - 1;
     if (next < 0) {
       setDone(true);
@@ -112,7 +112,7 @@ export default function WarmupGate({ tasks, onComplete }) {
 
             return (
               <DeckCard
-                key={`${task.id}-${task._version}`}
+                key={`${task._sheetRow}-${task._version}`}
                 question={task}
                 onSwipe={handleSwipe}
                 onSkip={handleSkip}
