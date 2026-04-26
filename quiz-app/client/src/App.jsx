@@ -86,11 +86,9 @@ export default function App() {
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
 
-  const [sessionKey, setSessionKey] = useState(0);
-  const [taskKey,    setTaskKey]    = useState(0);
-  const [addOpen,    setAddOpen]    = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
 
-  const { recordSwipe, resetSession, sessionStats } = useSession();
+  const { recordSwipe, sessionStats } = useSession();
   const { schedule, current, next, progress, refresh: refreshSchedule } = useSchedule();
   const [scheduleOpen, setScheduleOpen] = useState(false);
 
@@ -152,11 +150,6 @@ export default function App() {
   }, []);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
-  function handleReset() {
-    resetSession();
-    setSessionKey(k => k + 1);
-  }
-
   function handleAdded(type, item) {
     if (type === 'question') setQuestions(prev => [...prev, item]);
     if (type === 'task')     setTasks(prev => [...prev, item]);
@@ -205,9 +198,11 @@ export default function App() {
     </div>
   );
 
+  // Show only uncompleted tasks in the header count
+  const activeTasks = tasks.filter(t => t.result !== 'completed');
   const countLabel = deckIndex === 0
     ? `${questions.length} cards`
-    : `${tasks.length} tasks`;
+    : `${activeTasks.length} tasks`;
 
   // ── Main app ───────────────────────────────────────────────────────────────
   return (
@@ -253,17 +248,13 @@ export default function App() {
               {deckIndex === 0
                 ? (
                   <CardStack
-                    key={sessionKey}
                     questions={questions}
                     onSwipe={recordSwipe}
                     sessionStats={sessionStats}
-                    onReset={handleReset}
                   />
                 ) : (
                   <TaskStack
-                    key={taskKey}
                     tasks={tasks}
-                    onReset={() => setTaskKey(k => k + 1)}
                   />
                 )
               }

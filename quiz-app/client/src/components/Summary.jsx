@@ -2,8 +2,7 @@
  * Summary — session-complete screen shown when all flashcards have been swiped.
  *
  * Props:
- *   stats   — { done, deferred } counts from useSession
- *   onReset — callback to restart the session
+ *   stats — { done, deferred } counts from useSession
  */
 import '../styles/summary.css';
 
@@ -12,14 +11,16 @@ const TILES = [
   { key: 'deferred', label: 'Deferred', cls: 'tile-deferred' },
 ];
 
-export default function Summary({ stats, onReset }) {
+export default function Summary({ stats }) {
   const total = stats.done + stats.deferred;
 
   return (
     <div className="summary-screen">
       <div>
-        <h2 className="summary-heading">Session complete</h2>
-        <p className="summary-subheading">{total} card{total !== 1 ? 's' : ''} reviewed</p>
+        <h2 className="summary-heading">All done</h2>
+        <p className="summary-subheading">
+          {total} card{total !== 1 ? 's' : ''} reviewed
+        </p>
       </div>
 
       <div className="summary-grid">
@@ -30,10 +31,6 @@ export default function Summary({ stats, onReset }) {
           </div>
         ))}
       </div>
-
-      <button className="restart-btn" onClick={onReset}>
-        Start over
-      </button>
     </div>
   );
 }
