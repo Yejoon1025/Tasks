@@ -18,7 +18,6 @@ import { CARD_TYPE, VISIBLE_CARD_COUNT, STACK_SCALE_STEP, STACK_OFFSET_PX } from
 import { API_BASE } from '../api.js';
 import '../styles/cards.css';
 import '../styles/tasks.css';
-import '../styles/summary.css';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -36,8 +35,8 @@ function isDueToday(task) {
 export default function TaskStack({ tasks }) {
   const [deck, setDeck] = useState(() =>
     tasks
-      // Completed tasks are done — don't show again
-      .filter(t => t.result !== 'completed')
+      // Any task already acted on (completed or deferred) is excluded on reload
+      .filter(t => !t.result)
       .map(t => ({
         ...t,
         type:       CARD_TYPE.TASK,
@@ -47,16 +46,10 @@ export default function TaskStack({ tasks }) {
       }))
   );
   const [currentIndex, setCurrentIndex] = useState(deck.length - 1);
-  const [stats, setStats] = useState({ completed: 0, deferred: 0 });
 
   // ── Swipe left / right ─────────────────────────────────────────────────────
   function handleSwipe(id, direction, _type, elapsedMinutes) {
     const result = direction === 'right' ? 'completed' : 'deferred';
-
-    setStats(s => ({
-      completed: result === 'completed' ? s.completed + 1 : s.completed,
-      deferred:  result === 'deferred'  ? s.deferred  + 1 : s.deferred,
-    }));
     setCurrentIndex(i => i - 1);
 
     // Persist result + incremental time to the task row
@@ -86,32 +79,13 @@ export default function TaskStack({ tasks }) {
     }
   }
 
-  // ── Deck exhausted ─────────────────────────────────────────────────────────
+  // ── All done ───────────────────────────────────────────────────────────────
   if (currentIndex < 0) {
-    const total = stats.completed + stats.deferred;
     return (
-      <div className="task-done">
-        <div>
-          <h2 className="task-done-heading">All done</h2>
-          <p className="task-done-sub">
-            {total > 0
-              ? `${total} task${total !== 1 ? 's' : ''} reviewed`
-              : 'No tasks left for now'}
-          </p>
+      <div className="card-stack">
+        <div className="deck-placeholder">
+          <span className="deck-placeholder-label">All complete</span>
         </div>
-
-        {total > 0 && (
-          <div className="summary-grid">
-            <div className="summary-tile tile-correct">
-              <span className="summary-tile-number">{stats.completed}</span>
-              <span className="summary-tile-label">Completed</span>
-            </div>
-            <div className="summary-tile tile-deferred">
-              <span className="summary-tile-number">{stats.deferred}</span>
-              <span className="summary-tile-label">Deferred</span>
-            </div>
-          </div>
-        )}
       </div>
     );
   }

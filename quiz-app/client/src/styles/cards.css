@@ -235,6 +235,31 @@
   letter-spacing: 0.01em;
 }
 
+/* ── Empty-deck placeholder ──────────────────────────────────────────────── */
+/*
+ * Rendered inside .card-stack (position:relative) when all cards are done.
+ * position:absolute + inset:0 makes it exactly fill the stack area.
+ */
+.deck-placeholder {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-xl);
+  border: 1.5px dashed var(--color-border);
+  background: var(--color-surface);
+  opacity: 0.4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.deck-placeholder-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-3);
+}
+
 /* ── Timer badge ─────────────────────────────────────────────────────────── */
 /*
  * Sits in the bottom-right corner of .deck-card-outer (sibling of the card

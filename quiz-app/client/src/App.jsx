@@ -26,7 +26,6 @@ import WarmupGate       from './components/WarmupGate.jsx';
 import ScheduleWidget   from './components/ScheduleWidget.jsx';
 import SchedulePanel    from './components/SchedulePanel.jsx';
 import AddPanel         from './components/AddPanel.jsx';
-import { useSession }          from './hooks/useSession.js';
 import { useSchedule }         from './hooks/useSchedule.js';
 import { useVisibilityRefresh } from './hooks/useVisibilityRefresh.js';
 import { WARMUP_CLEARED_PREFIX } from './config.js';
@@ -88,7 +87,6 @@ export default function App() {
 
   const [addOpen, setAddOpen] = useState(false);
 
-  const { recordSwipe, sessionStats } = useSession();
   const { schedule, current, next, progress, refresh: refreshSchedule } = useSchedule();
   const [scheduleOpen, setScheduleOpen] = useState(false);
 
@@ -249,8 +247,6 @@ export default function App() {
                 ? (
                   <CardStack
                     questions={questions}
-                    onSwipe={recordSwipe}
-                    sessionStats={sessionStats}
                   />
                 ) : (
                   <TaskStack
