@@ -65,13 +65,6 @@ export default function TaskStack({ tasks }) {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ result, time_spent_min: elapsedMinutes }),
     }).catch(err => console.warn('Task sync failed:', err.message));
-
-    // Append to Results log
-    fetch(`${API_BASE}/api/results`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ cardId: id, cardType: 'task', direction, time_spent_min: elapsedMinutes }),
-    }).catch(err => console.warn('Result sync failed:', err.message));
   }
 
   // ── Swipe up: re-queue ─────────────────────────────────────────────────────

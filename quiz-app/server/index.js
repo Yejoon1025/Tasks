@@ -21,7 +21,6 @@
  *  GET  /api/warmup                 → array of warmup task objects
  *  PATCH /api/warmup/:id            → write last_completed date (col D)
  *
- *  POST /api/results                → append a study-result row (append-only log)
  *
  * Deployment
  * ─────────────────────────────────────────────────────────────────────────────
@@ -271,36 +270,6 @@ app.patch('/api/questions/:id', async (req, res) => {
   }
 });
 
-// ── POST /api/results ──────────────────────────────────────────────────────────
-// Append a study result row to the Results sheet (append-only log).
-// Results sheet columns: timestamp  card_id  card_type  result  time_spent_min
-const RESULT_LABEL = {
-  flashcard: { right: 'done',      left: 'deferred'  },
-  task:      { right: 'completed', left: 'deferred'  },
-};
-
-app.post('/api/results', async (req, res) => {
-  const { cardId, cardType, direction, time_spent_min } = req.body;
-  const result = RESULT_LABEL[cardType]?.[direction] ?? direction;
-
-  if (!isSheetsConfigured()) {
-    return res.json({ persisted: false });
-  }
-
-  try {
-    await appendRow('Results', [
-      new Date().toISOString(),
-      String(cardId),
-      cardType,
-      result,
-      time_spent_min ?? 0,
-    ]);
-    res.json({ persisted: true });
-  } catch (err) {
-    console.error('Sheets write error (results):', err.message);
-    res.status(500).json({ error: 'Failed to log result.' });
-  }
-});
 
 // ── GET /api/warmup ────────────────────────────────────────────────────────────
 app.get('/api/warmup', async (req, res) => {

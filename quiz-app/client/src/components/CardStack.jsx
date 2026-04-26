@@ -44,13 +44,6 @@ export default function CardStack({ questions, onSwipe, sessionStats }) {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ minutes: elapsedMinutes, result }),
     }).catch(err => console.warn('Question sync failed:', err.message));
-
-    // Append to the Results log
-    fetch(`${API_BASE}/api/results`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ cardId: id, cardType: 'flashcard', direction, time_spent_min: elapsedMinutes }),
-    }).catch(err => console.warn('Result sync failed:', err.message));
   }
 
   // ── Swipe up: re-queue at the back ─────────────────────────────────────────
